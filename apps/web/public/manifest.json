@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "Workspace",
   "short_name": "Workspace",
   "description": "Productivity workspace for reminders, notes, and environment secrets.",
@@ -7,6 +7,12 @@
   "background_color": "#FFFDF8",
   "theme_color": "#FFFDF8",
   "icons": [
+    {
+      "src": "/icons/workspace-layers-trio-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/icon.svg",
       "sizes": "any",
@@ -32,3 +38,4 @@
     }
   ]
 }
+

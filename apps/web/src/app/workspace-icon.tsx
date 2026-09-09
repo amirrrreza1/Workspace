@@ -1,132 +1,38 @@
-import type { SVGProps } from "react";
+﻿import type { ImgHTMLAttributes } from "react";
 
-export interface WorkspaceIconProps extends SVGProps<SVGSVGElement> {
+export interface WorkspaceIconProps
+  extends Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> {
   size?: number | string;
   variant?: "mark" | "tile";
 }
 
 export function WorkspaceIcon({
   size = 24,
-  variant = "mark",
+  variant: _variant = "mark",
   className,
+  alt = "Workspace",
+  style,
   ...props
 }: WorkspaceIconProps) {
-  if (variant === "tile") {
-    return (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 512 512"
-        width={size}
-        height={size}
-        className={className}
-        aria-hidden="true"
-        {...props}
-      >
-        <defs>
-          <style>
-            {`
-              .ws-stroke-bold { stroke: #18181B; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; }
-              .ws-stroke-thin { stroke: #18181B; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
-            `}
-          </style>
-        </defs>
+  const dimension = typeof size === "number" ? `${size}px` : size;
 
-        {/* Squircle Shadow */}
-        <rect x="74" y="74" width="380" height="380" rx="84" fill="#18181B" />
-
-        {/* Squircle Base Tile */}
-        <rect
-          x="58"
-          y="58"
-          width="380"
-          height="380"
-          rx="84"
-          fill="#FFFDF8"
-          stroke="#18181B"
-          strokeWidth="20"
-          strokeLinejoin="round"
-        />
-
-        {/* === 3. BOTTOM LAYER (SECRETS - GOLD) === */}
-        <path d="M 268 316 L 434 372 L 268 448 L 102 392 Z" fill="#18181B" />
-        <path d="M 96 348 L 256 404 L 256 428 L 96 372 Z" fill="#D97706" className="ws-stroke-bold" />
-        <path d="M 256 404 L 416 348 L 416 372 L 256 428 Z" fill="#B45309" className="ws-stroke-bold" />
-        <path d="M 256 292 L 416 348 L 256 404 L 96 348 Z" fill="#F59E0B" className="ws-stroke-bold" />
-        <circle cx="256" cy="342" r="7" fill="#18181B" />
-        <polygon points="253,342 259,342 261,356 251,356" fill="#18181B" />
-
-        {/* === 2. MIDDLE LAYER (NOTES - SAND) === */}
-        <path d="M 264 232 L 424 288 L 264 360 L 104 304 Z" fill="#18181B" opacity="0.95" />
-        <path d="M 96 264 L 256 320 L 256 344 L 96 288 Z" fill="#D4C3A3" className="ws-stroke-bold" />
-        <path d="M 256 320 L 416 264 L 416 288 L 256 344 Z" fill="#C4B18E" className="ws-stroke-bold" />
-        <path d="M 256 208 L 416 264 L 256 320 L 96 264 Z" fill="#FFF4DA" className="ws-stroke-bold" />
-        <line x1="206" y1="260" x2="276" y2="284" className="ws-stroke-thin" />
-        <line x1="226" y1="246" x2="296" y2="270" className="ws-stroke-thin" />
-
-        {/* === 1. TOP LAYER (REMINDERS - WHITE & ACCENT RED) === */}
-        <path d="M 264 148 L 424 204 L 264 276 L 104 220 Z" fill="#18181B" opacity="0.95" />
-        <path d="M 96 180 L 256 236 L 256 260 L 96 204 Z" fill="#E4E4E7" className="ws-stroke-bold" />
-        <path d="M 256 236 L 416 180 L 416 204 L 256 260 Z" fill="#D4D4D8" className="ws-stroke-bold" />
-        <path d="M 256 124 L 416 180 L 256 236 L 96 180 Z" fill="#FFFFFF" className="ws-stroke-bold" />
-        <path
-          d="M 256 124 L 416 180 L 376 194 L 256 152 L 136 194 L 96 180 Z"
-          fill="#D31611"
-          className="ws-stroke-bold"
-        />
-        <circle cx="256" cy="188" r="8" fill="#18181B" />
-        <path d="M 250 178 C 250 174 253 170 256 170 C 259 170 262 174 262 178 Z" fill="#18181B" />
-      </svg>
-    );
-  }
-
-  // "mark" variant: viewBox cropped to the stacked layers
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="84 110 360 345"
-      width={size}
-      height={size}
+    <img
+      src="/icons/workspace-layers-trio-512.png"
+      alt={alt}
+      width={typeof size === "number" ? size : undefined}
+      height={typeof size === "number" ? size : undefined}
       className={className}
-      aria-hidden="true"
+      style={{
+        width: dimension,
+        height: dimension,
+        objectFit: "contain",
+        display: "inline-block",
+        verticalAlign: "middle",
+        userSelect: "none",
+        ...style,
+      }}
       {...props}
-    >
-      <defs>
-        <style>
-          {`
-            .ws-stroke-bold { stroke: #18181B; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; }
-            .ws-stroke-thin { stroke: #18181B; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
-          `}
-        </style>
-      </defs>
-
-      {/* === 3. BOTTOM LAYER (SECRETS - GOLD) === */}
-      <path d="M 268 316 L 434 372 L 268 448 L 102 392 Z" fill="#18181B" />
-      <path d="M 96 348 L 256 404 L 256 428 L 96 372 Z" fill="#D97706" className="ws-stroke-bold" />
-      <path d="M 256 404 L 416 348 L 416 372 L 256 428 Z" fill="#B45309" className="ws-stroke-bold" />
-      <path d="M 256 292 L 416 348 L 256 404 L 96 348 Z" fill="#F59E0B" className="ws-stroke-bold" />
-      <circle cx="256" cy="342" r="7" fill="#18181B" />
-      <polygon points="253,342 259,342 261,356 251,356" fill="#18181B" />
-
-      {/* === 2. MIDDLE LAYER (NOTES - SAND) === */}
-      <path d="M 264 232 L 424 288 L 264 360 L 104 304 Z" fill="#18181B" opacity="0.95" />
-      <path d="M 96 264 L 256 320 L 256 344 L 96 288 Z" fill="#D4C3A3" className="ws-stroke-bold" />
-      <path d="M 256 320 L 416 264 L 416 288 L 256 344 Z" fill="#C4B18E" className="ws-stroke-bold" />
-      <path d="M 256 208 L 416 264 L 256 320 L 96 264 Z" fill="#FFF4DA" className="ws-stroke-bold" />
-      <line x1="206" y1="260" x2="276" y2="284" className="ws-stroke-thin" />
-      <line x1="226" y1="246" x2="296" y2="270" className="ws-stroke-thin" />
-
-      {/* === 1. TOP LAYER (REMINDERS - WHITE & ACCENT RED) === */}
-      <path d="M 264 148 L 424 204 L 264 276 L 104 220 Z" fill="#18181B" opacity="0.95" />
-      <path d="M 96 180 L 256 236 L 256 260 L 96 204 Z" fill="#E4E4E7" className="ws-stroke-bold" />
-      <path d="M 256 236 L 416 180 L 416 204 L 256 260 Z" fill="#D4D4D8" className="ws-stroke-bold" />
-      <path d="M 256 124 L 416 180 L 256 236 L 96 180 Z" fill="#FFFFFF" className="ws-stroke-bold" />
-      <path
-        d="M 256 124 L 416 180 L 376 194 L 256 152 L 136 194 L 96 180 Z"
-        fill="#D31611"
-        className="ws-stroke-bold"
-      />
-      <circle cx="256" cy="188" r="8" fill="#18181B" />
-      <path d="M 250 178 C 250 174 253 170 256 170 C 259 170 262 174 262 178 Z" fill="#18181B" />
-    </svg>
+    />
   );
 }

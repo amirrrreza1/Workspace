@@ -1,4 +1,4 @@
-@import "@reminder/ui/styles/tokens.css";
+﻿@import "@reminder/ui/styles/tokens.css";
 @import "@reminder/ui/styles/base.css";
 @import "@reminder/ui/styles/components.css";
 
@@ -623,9 +623,10 @@ body {
   block-size: 3.25rem;
   border: var(--border-strong);
   border-radius: var(--radius-control);
-  background: var(--color-accent);
-  color: #fff;
+  background: var(--color-surface);
+  color: var(--color-ink);
   box-shadow: var(--shadow-control);
+  overflow: hidden;
 }
 
 .login-heading {
@@ -2030,3 +2031,4 @@ body {
     padding-inline: var(--space-2);
   }
 }
+

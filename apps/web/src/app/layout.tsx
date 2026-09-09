@@ -1,4 +1,4 @@
-import { GeistMono } from "geist/font/mono";
+﻿import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
@@ -19,8 +19,8 @@ export const metadata: Metadata = {
   description: "Personal productivity workspace for your reminders, notes, and project environment secrets.",
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
       { url: "/icon.png", type: "image/png" },
+      { url: "/icon.svg", type: "image/svg+xml" },
     ],
     apple: "/apple-touch-icon.png",
     shortcut: "/favicon.ico",
@@ -49,3 +49,4 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     </html>
   );
 }
+

@@ -1,13 +1,19 @@
-Add-Type -AssemblyName System.Drawing
+﻿Add-Type -AssemblyName System.Drawing
 
-$src1 = "C:\Users\Amirreza\.gemini\antigravity\brain\5b64c21e-ad05-404e-ab18-f625c2970510\workspace_layers_icon_1788975744602.jpg"
-$src2 = "C:\Users\Amirreza\.gemini\antigravity\brain\5b64c21e-ad05-404e-ab18-f625c2970510\workspace_layers_v2_1788975799774.jpg"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$rootDir = Split-Path -Parent $scriptDir
+$publicDir = Join-Path $rootDir "apps\web\public"
+$iconsDir = Join-Path $publicDir "icons"
+$appDir = Join-Path $rootDir "apps\web\src\app"
+
+$canonicalSource = Join-Path $iconsDir "workspace-layers-trio-512.png"
+
+if (-not (Test-Path $canonicalSource)) {
+    Write-Error "Canonical icon not found: $canonicalSource"
+    exit 1
+}
 
 function Resize-Image($sourcePath, $targetPath, $width, $height) {
-    if (-not (Test-Path $sourcePath)) {
-        Write-Error "Source file not found: $sourcePath"
-        return
-    }
     $img = [System.Drawing.Image]::FromFile($sourcePath)
     $bmp = New-Object System.Drawing.Bitmap($width, $height)
     $graph = [System.Drawing.Graphics]::FromImage($bmp)
@@ -23,26 +29,14 @@ function Resize-Image($sourcePath, $targetPath, $width, $height) {
     Write-Output "Generated: $targetPath ($width x $height)"
 }
 
-$iconsDir = "d:\Work\Main Projects\Reminder\apps\web\public\icons"
-$publicDir = "d:\Work\Main Projects\Reminder\apps\web\public"
-$appDir = "d:\Work\Main Projects\Reminder\apps\web\src\app"
+# Primary app icons generated from canonical workspace-layers-trio-512.png
+Resize-Image $canonicalSource "$publicDir\icon.png" 512 512
+Resize-Image $canonicalSource "$appDir\icon.png" 512 512
+Resize-Image $canonicalSource "$publicDir\apple-touch-icon.png" 180 180
+Resize-Image $canonicalSource "$publicDir\icon-192.png" 192 192
+Resize-Image $canonicalSource "$publicDir\icon-512.png" 512 512
 
-if (-not (Test-Path $iconsDir)) {
-    New-Item -ItemType Directory -Force -Path $iconsDir | Out-Null
-}
-
-Resize-Image $src1 "$iconsDir\workspace-layers-trio-512.png" 512 512
-Resize-Image $src1 "$iconsDir\workspace-layers-trio-1024.png" 1024 1024
-Resize-Image $src2 "$iconsDir\workspace-layers-geometric-512.png" 512 512
-
-# Primary app icons (Next.js favicon and public icon)
-Resize-Image $src1 "$publicDir\icon.png" 512 512
-Resize-Image $src1 "$appDir\icon.png" 512 512
-Resize-Image $src1 "$publicDir\apple-touch-icon.png" 180 180
-Resize-Image $src1 "$publicDir\icon-192.png" 192 192
-Resize-Image $src1 "$publicDir\icon-512.png" 512 512
-
-# Generate favicon.ico
+# Generate favicon.ico (32x32)
 $icoBmp = [System.Drawing.Bitmap]::FromFile("$publicDir\icon.png")
 $icoThumb = New-Object System.Drawing.Bitmap($icoBmp, 32, 32)
 $hIcon = $icoThumb.GetHicon()
@@ -52,6 +46,6 @@ $icoIcon.Save($icoStream)
 $icoStream.Close()
 $icoThumb.Dispose()
 $icoBmp.Dispose()
-Write-Output "Generated favicon.ico"
+Write-Output "Generated favicon.ico (32 x 32)"
 
-Write-Output "All icons generated successfully."
+Write-Output "All icons generated successfully from workspace-layers-trio-512.png"

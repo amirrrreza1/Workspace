@@ -10,6 +10,7 @@ test("sends an unauthenticated visitor to the login page", async ({ page }) => {
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("heading", { name: "Reminder" })).toBeVisible();
   await expect(page.getByLabel(passwordField)).toBeVisible();
+  await expect(page.locator("header.app-header")).not.toBeVisible();
 });
 
 test("rejects the wrong password without signing in", async ({ page }) => {
@@ -28,10 +29,12 @@ test("rejects the wrong password without signing in", async ({ page }) => {
 
 test("signs in with the configured password and reaches the dashboard", async ({ page }) => {
   await page.goto("/login");
+  await expect(page.locator("header.app-header")).not.toBeVisible();
   await page.getByLabel(passwordField).fill(TEST_PASSWORD);
   await page.getByRole("button", { name: signInButton }).click();
 
   await expect(page).toHaveURL(`${BASE_URL}/`);
+  await expect(page.locator("header.app-header")).toBeVisible();
   await expect(page.getByRole("button", { name: "Add reminder" })).toBeVisible();
 });
 
@@ -83,6 +86,7 @@ test("skips the login page when a session is already present", async ({ page }) 
 test("clears the session on logout and refuses to go back in", async ({ page }) => {
   await seedSession(page);
   await page.goto("/");
+  await expect(page.locator("header.app-header")).toBeVisible();
   await expect(page.getByRole("button", { name: "Add reminder" })).toBeVisible();
 
   const logout = await page.request.post("/api/auth/logout");
@@ -91,4 +95,5 @@ test("clears the session on logout and refuses to go back in", async ({ page }) 
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByLabel(passwordField)).toBeVisible();
+  await expect(page.locator("header.app-header")).not.toBeVisible();
 });

@@ -9,9 +9,13 @@ import { WorkspaceIcon } from "./workspace-icon";
 export function AppHeader() {
   const pathname = usePathname();
 
-  const isReminders = pathname === "/" || pathname.startsWith("/reminders");
-  const isNotes = pathname.startsWith("/notes");
-  const isSecrets = pathname.startsWith("/secrets");
+  if (pathname === "/login" || pathname?.startsWith("/login/")) {
+    return null;
+  }
+
+  const isReminders = pathname === "/" || pathname?.startsWith("/reminders");
+  const isNotes = pathname?.startsWith("/notes");
+  const isSecrets = pathname?.startsWith("/secrets");
 
   return (
     <header className="app-header">

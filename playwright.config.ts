@@ -18,7 +18,10 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "pnpm --filter @reminder/web exec next dev --port 4310",
+    command:
+      process.platform === "win32"
+        ? "pnpm.cmd --filter @reminder/web exec next dev --port 4310"
+        : "pnpm --filter @reminder/web exec next dev --port 4310",
     url: "http://127.0.0.1:4310",
     // Next never overrides a value already in process.env, so this wins over
     // apps/web/.env and the suite never needs the real dashboard password.

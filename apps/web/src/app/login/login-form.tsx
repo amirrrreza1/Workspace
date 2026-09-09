@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
-import { Bell, Eye, EyeOff, LoaderCircle } from "lucide-react";
+import { Eye, EyeOff, LoaderCircle } from "lucide-react";
+import { WorkspaceIcon } from "../workspace-icon";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
@@ -61,7 +62,7 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
     <main className="login-shell">
       <form className="login-card" onSubmit={submit}>
         <span className="login-mark" aria-hidden="true">
-          <Bell size={28} />
+          <WorkspaceIcon size={34} />
         </span>
         <div className="login-heading">
           <h1>Reminder</h1>
@@ -113,3 +114,4 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
     </main>
   );
 }
+
