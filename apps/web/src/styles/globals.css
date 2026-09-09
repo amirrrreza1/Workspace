@@ -1,4 +1,4 @@
-﻿@import "@reminder/ui/styles/tokens.css";
+@import "@reminder/ui/styles/tokens.css";
 @import "@reminder/ui/styles/base.css";
 @import "@reminder/ui/styles/components.css";
 
@@ -619,14 +619,6 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  inline-size: 3.25rem;
-  block-size: 3.25rem;
-  border: var(--border-strong);
-  border-radius: var(--radius-control);
-  background: var(--color-surface);
-  color: var(--color-ink);
-  box-shadow: var(--shadow-control);
-  overflow: hidden;
 }
 
 .login-heading {
@@ -758,25 +750,14 @@ body {
 }
 
 .app-logo-box {
-  inline-size: 2.5rem;
-  block-size: 2.5rem;
-  background: var(--color-surface);
-  color: var(--color-ink);
-  border: var(--border-strong);
-  border-radius: var(--radius-control);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 2px 2px 0 var(--color-shadow);
-  transition:
-    transform var(--transition-fast),
-    box-shadow var(--transition-fast);
-  overflow: hidden;
+  transition: transform var(--transition-fast);
 }
 
 .app-brand:hover .app-logo-box {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--color-shadow);
 }
 
 .app-title-group {
@@ -1292,11 +1273,6 @@ body {
   .app-brand {
     order: 1;
     gap: var(--space-2);
-  }
-
-  .app-logo-box {
-    inline-size: 2.25rem;
-    block-size: 2.25rem;
   }
 
   .app-title {

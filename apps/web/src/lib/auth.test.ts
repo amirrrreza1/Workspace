@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { createSessionToken, safeRedirectPath, secretsMatch, verifySessionToken } from "./auth.js";
+import {
+  createSessionToken,
+  isPublicPath,
+  safeRedirectPath,
+  secretsMatch,
+  verifySessionToken,
+} from "./auth.js";
 
 const PASSWORD = "a-long-enough-test-password";
 
@@ -87,3 +93,36 @@ describe("safeRedirectPath", () => {
     expect(safeRedirectPath("/login?next=/")).toBe("/");
   });
 });
+
+describe("isPublicPath", () => {
+  it("allows static assets used on login and public pages", () => {
+    expect(isPublicPath("/icons/workspace-layers-trio-512.png")).toBe(true);
+    expect(isPublicPath("/Shabnam/Shabnam.woff2")).toBe(true);
+    expect(isPublicPath("/favicon.ico")).toBe(true);
+    expect(isPublicPath("/icon.png")).toBe(true);
+    expect(isPublicPath("/icon.svg")).toBe(true);
+    expect(isPublicPath("/icon-192.png")).toBe(true);
+    expect(isPublicPath("/icon-512.png")).toBe(true);
+    expect(isPublicPath("/apple-touch-icon.png")).toBe(true);
+    expect(isPublicPath("/manifest.json")).toBe(true);
+  });
+
+  it("allows auth routes and health checks", () => {
+    expect(isPublicPath("/login")).toBe(true);
+    expect(isPublicPath("/api/auth/login")).toBe(true);
+    expect(isPublicPath("/api/auth/logout")).toBe(true);
+    expect(isPublicPath("/api/health/live")).toBe(true);
+    expect(isPublicPath("/api/health/ready")).toBe(true);
+  });
+
+  it("denies access to protected dashboard pages and sensitive APIs", () => {
+    expect(isPublicPath("/")).toBe(false);
+    expect(isPublicPath("/notes")).toBe(false);
+    expect(isPublicPath("/secrets")).toBe(false);
+    expect(isPublicPath("/reminders")).toBe(false);
+    expect(isPublicPath("/api/v1/reminders")).toBe(false);
+    expect(isPublicPath("/api/v1/notes")).toBe(false);
+    expect(isPublicPath("/api/v1/secrets.png")).toBe(false);
+  });
+});
+

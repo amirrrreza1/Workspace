@@ -23,7 +23,7 @@ export function AppHeader() {
         <div className="app-header-top">
           <Link href="/" className="app-brand" aria-label="Workspace Home">
             <div className="app-logo-box">
-              <WorkspaceIcon size={26} />
+              <WorkspaceIcon size={36} />
             </div>
             <div className="app-title-group">
               <span className="app-title">Workspace</span>

@@ -172,3 +172,29 @@ export function safeRedirectPath(value: string | null | undefined): string {
   if (value.startsWith("/login")) return "/";
   return value;
 }
+
+/** Public prefixes that must be accessible without authentication. */
+export const PUBLIC_PREFIXES = ["/api/health/", "/icons/", "/Shabnam/"];
+
+export const PUBLIC_PATHS = new Set([
+  "/login",
+  "/api/auth/login",
+  "/api/auth/logout",
+  "/favicon.ico",
+  "/icon.png",
+  "/icon.svg",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/apple-touch-icon.png",
+  "/manifest.json",
+]);
+
+const STATIC_ASSET_EXTENSIONS = /\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot)$/i;
+
+export function isPublicPath(pathname: string): boolean {
+  if (PUBLIC_PATHS.has(pathname)) return true;
+  if (PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return true;
+  if (!pathname.startsWith("/api/") && STATIC_ASSET_EXTENSIONS.test(pathname)) return true;
+  return false;
+}
+

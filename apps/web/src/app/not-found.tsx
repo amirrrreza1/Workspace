@@ -19,21 +19,8 @@ export default function NotFound() {
           alignItems: "center",
         }}
       >
-        <div
-          style={{
-            width: "64px",
-            height: "64px",
-            background: "var(--color-surface-raised)",
-            border: "var(--border-strong)",
-            borderRadius: "var(--radius-control)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "3px 3px 0 var(--color-shadow)",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <WorkspaceIcon size={44} />
+        <div style={{ marginBottom: "1.5rem" }}>
+          <WorkspaceIcon size={56} />
         </div>
         <h2 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--color-ink)", margin: 0 }}>
           Page Not Found

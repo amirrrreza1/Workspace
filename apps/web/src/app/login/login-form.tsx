@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { WorkspaceIcon } from "../workspace-icon";
@@ -62,7 +62,7 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
     <main className="login-shell">
       <form className="login-card" onSubmit={submit}>
         <span className="login-mark" aria-hidden="true">
-          <WorkspaceIcon size={34} />
+          <WorkspaceIcon size={48} />
         </span>
         <div className="login-heading">
           <h1>Reminder</h1>
