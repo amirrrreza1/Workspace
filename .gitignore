@@ -11,6 +11,7 @@ test-results/
 .env
 .env.*
 !.env.example
+cookies.txt
 
 # Logs and local state
 *.log
