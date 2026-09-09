@@ -5,8 +5,10 @@ import { getConfig } from "@reminder/config";
 import {
   NotFoundError,
   NotificationRepository,
+  NotesRepository,
   ProviderUnavailableError,
   ReminderRepository,
+  SecretsRepository,
   StaleWriteError,
 } from "@reminder/db";
 
@@ -19,6 +21,16 @@ export function repository(): ReminderRepository {
     { email: config.smtpConfigured, telegram: config.telegramConfigured },
     config.NOTIFICATION_MISSED_GRACE_HOURS,
   );
+}
+
+export function notesRepository(): NotesRepository {
+  const config = getConfig();
+  return new NotesRepository(config.DATABASE_URL);
+}
+
+export function secretsRepository(): SecretsRepository {
+  const config = getConfig();
+  return new SecretsRepository(config.DATABASE_URL, config.SECRETS_MASTER_KEY);
 }
 
 export function providerStatus() {

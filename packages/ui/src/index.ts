@@ -1,3 +1,5 @@
+"use client";
+
 export { Button, type ButtonProps, type ButtonVariant } from "./components/button";
 export {
   Dialog,

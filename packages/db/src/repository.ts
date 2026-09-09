@@ -12,7 +12,7 @@ import {
 } from "@reminder/domain";
 import type { Sql, TransactionSql } from "postgres";
 
-import { NotFoundError, ProviderUnavailableError } from "./errors.js";
+import { NotFoundError, ProviderUnavailableError, StaleWriteError } from "./errors.js";
 import { createSql } from "./index.js";
 
 export type ProviderAvailability = Record<NotificationChannel, boolean>;
@@ -70,11 +70,6 @@ type ReminderRow = {
   updated_at: Date;
 };
 
-export class StaleWriteError extends Error {
-  constructor(readonly current: ReminderRecord | SettingsRecord) {
-    super("The resource has changed since it was loaded.");
-  }
-}
 function iso(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }

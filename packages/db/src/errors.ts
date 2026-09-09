@@ -7,3 +7,12 @@ export class ProviderUnavailableError extends Error {
     super(`${channel} is not configured by the server.`);
   }
 }
+
+export class StaleWriteError extends Error {
+  constructor(
+    readonly current?: unknown,
+    message = "The resource has changed since it was loaded.",
+  ) {
+    super(message);
+  }
+}

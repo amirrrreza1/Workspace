@@ -8,6 +8,9 @@ export * from "./schema.js";
 export * from "./errors.js";
 export * from "./repository.js";
 export * from "./notifications.js";
+export * from "./crypto.js";
+export * from "./notes-repository.js";
+export * from "./secrets-repository.js";
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const migrationsDir = path.join(packageRoot, "migrations");

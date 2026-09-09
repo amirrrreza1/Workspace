@@ -24,7 +24,7 @@ const gregorian = (year: number, month: number, day: number): GregorianDate => (
 
 describe("domain", () => {
   it("exports the application name", () => {
-    expect(APP_NAME).toBe("Reminder");
+    expect(APP_NAME).toBe("Workspace");
   });
 
   it("round-trips known Gregorian and Jalali new year dates", () => {

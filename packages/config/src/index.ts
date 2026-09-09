@@ -36,6 +36,7 @@ const envSchema = z.object({
     .refine((value) => !PLACEHOLDER_PASSWORDS.has(value.toLowerCase()), {
       message: "AUTH_PASSWORD is still set to a placeholder value",
     }),
+  SECRETS_MASTER_KEY: z.string().optional().default(""),
   SMTP_HOST: z.string().optional().default(""),
   SMTP_PORT: z.coerce.number().int().min(1).max(65535).optional().default(587),
   SMTP_SECURE: booleanFromEnv.optional().default(false),

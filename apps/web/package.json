@@ -2,7 +2,6 @@
   "name": "@reminder/web",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "scripts": {
     "dev": "next dev --port 3100",
     "build": "next build",

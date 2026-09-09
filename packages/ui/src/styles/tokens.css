@@ -15,6 +15,8 @@
   --color-disabled: #d4d4d8;
   --color-overlay: rgba(24, 24, 27, 0.56);
   --color-divider: #e4e4e7;
+  --color-border-subtle: #e4e4e7;
+  --color-shadow: #18181b;
 
   --font-sans: "Geist Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, monospace;
@@ -37,8 +39,8 @@
   --border-strong: 3px solid var(--color-ink);
   --border-subtle: 1px solid var(--color-divider);
 
-  --shadow-control: 4px 4px 0 var(--color-ink);
-  --shadow-card: 8px 8px 0 var(--color-ink);
+  --shadow-control: 4px 4px 0 var(--color-shadow);
+  --shadow-card: 8px 8px 0 var(--color-shadow);
 
   --focus-ring: 0 0 0 3px var(--color-canvas), 0 0 0 6px var(--color-accent);
 
@@ -48,4 +50,64 @@
 
   --content-max: 75rem;
   --header-height: 4rem;
+}
+
+[data-theme="dark"] {
+  --color-canvas: #121214;
+  --color-surface: #1e1d24;
+  --color-surface-raised: #282730;
+  --color-surface-muted: #35333f;
+  --color-ink: #f4f4f6;
+  --color-ink-muted: #a1a1aa;
+  --color-ink-subtle: #71717a;
+  --color-accent: #ef4444;
+  --color-accent-hover: #dc2626;
+  --color-warm-hover: #3d3428;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-info: #38bdf8;
+  --color-disabled: #27272a;
+  --color-overlay: rgba(0, 0, 0, 0.75);
+  --color-divider: #2e2d38;
+  --color-border-subtle: #2e2d38;
+  --color-shadow: #000000;
+
+  --border-strong: 3px solid var(--color-ink);
+  --border-subtle: 1px solid var(--color-divider);
+
+  --shadow-control: 4px 4px 0 var(--color-shadow);
+  --shadow-card: 8px 8px 0 var(--color-shadow);
+
+  --focus-ring: 0 0 0 3px var(--color-canvas), 0 0 0 6px var(--color-accent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-canvas: #121214;
+    --color-surface: #1e1d24;
+    --color-surface-raised: #282730;
+    --color-surface-muted: #35333f;
+    --color-ink: #f4f4f6;
+    --color-ink-muted: #a1a1aa;
+    --color-ink-subtle: #71717a;
+    --color-accent: #ef4444;
+    --color-accent-hover: #dc2626;
+    --color-warm-hover: #3d3428;
+    --color-success: #22c55e;
+    --color-warning: #f59e0b;
+    --color-info: #38bdf8;
+    --color-disabled: #27272a;
+    --color-overlay: rgba(0, 0, 0, 0.75);
+    --color-divider: #2e2d38;
+    --color-border-subtle: #2e2d38;
+    --color-shadow: #000000;
+
+    --border-strong: 3px solid var(--color-ink);
+    --border-subtle: 1px solid var(--color-divider);
+
+    --shadow-control: 4px 4px 0 var(--color-shadow);
+    --shadow-card: 8px 8px 0 var(--color-shadow);
+
+    --focus-ring: 0 0 0 3px var(--color-canvas), 0 0 0 6px var(--color-accent);
+  }
 }

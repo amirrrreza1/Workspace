@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <style>
+      .stroke-bold { stroke: #18181B; stroke-width: 18; stroke-linecap: round; stroke-linejoin: round; }
+      .stroke-thin { stroke: #18181B; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+
+  <!-- Neo-Brutalist Hard Offset Shadow -->
+  <rect x="74" y="74" width="380" height="380" rx="84" fill="#18181B" />
+
+  <!-- Main App Tile Container -->
+  <rect x="58" y="58" width="380" height="380" rx="84" fill="#FFFDF8" stroke="#18181B" stroke-width="20" stroke-linejoin="round" />
+
+  <!-- ==========================================
+       3. BOTTOM LAYER: SECRETS (GOLD / VAULT)
+       ========================================== -->
+  <!-- Bottom cast shadow onto base tile -->
+  <path d="M 268 316 L 434 372 L 268 448 L 102 392 Z" fill="#18181B" />
+
+  <!-- Bottom layer 3D side facets -->
+  <path d="M 96 348 L 256 404 L 256 428 L 96 372 Z" fill="#D97706" class="stroke-bold" />
+  <path d="M 256 404 L 416 348 L 416 372 L 256 428 Z" fill="#B45309" class="stroke-bold" />
+  <!-- Bottom layer top face -->
+  <path d="M 256 292 L 416 348 L 256 404 L 96 348 Z" fill="#F59E0B" class="stroke-bold" />
+  <!-- Keyhole glyph on gold face -->
+  <circle cx="256" cy="342" r="7" fill="#18181B" />
+  <polygon points="253,342 259,342 261,356 251,356" fill="#18181B" />
+
+  <!-- ==========================================
+       2. MIDDLE LAYER: NOTES (SAND / PARCHMENT)
+       ========================================== -->
+  <!-- Middle cast shadow onto bottom layer -->
+  <path d="M 264 232 L 424 288 L 264 360 L 104 304 Z" fill="#18181B" opacity="0.95" />
+
+  <!-- Middle layer 3D side facets -->
+  <path d="M 96 264 L 256 320 L 256 344 L 96 288 Z" fill="#D4C3A3" class="stroke-bold" />
+  <path d="M 256 320 L 416 264 L 416 288 L 256 344 Z" fill="#C4B18E" class="stroke-bold" />
+  <!-- Middle layer top face -->
+  <path d="M 256 208 L 416 264 L 256 320 L 96 264 Z" fill="#FFF4DA" class="stroke-bold" />
+  <!-- Document note lines on sand face -->
+  <line x1="206" y1="260" x2="276" y2="284" class="stroke-thin" />
+  <line x1="226" y1="246" x2="296" y2="270" class="stroke-thin" />
+
+  <!-- ==========================================
+       1. TOP LAYER: REMINDERS (WHITE & CRIMSON)
+       ========================================== -->
+  <!-- Top cast shadow onto middle layer -->
+  <path d="M 264 148 L 424 204 L 264 276 L 104 220 Z" fill="#18181B" opacity="0.95" />
+
+  <!-- Top layer 3D side facets -->
+  <path d="M 96 180 L 256 236 L 256 260 L 96 204 Z" fill="#E4E4E7" class="stroke-bold" />
+  <path d="M 256 236 L 416 180 L 416 204 L 256 260 Z" fill="#D4D4D8" class="stroke-bold" />
+  <!-- Top layer top face -->
+  <path d="M 256 124 L 416 180 L 256 236 L 96 180 Z" fill="#FFFFFF" class="stroke-bold" />
+  <!-- Top layer red accent header stripe -->
+  <path d="M 256 124 L 416 180 L 376 194 L 256 152 L 136 194 L 96 180 Z" fill="#D31611" class="stroke-bold" />
+  <!-- Notification Bell glyph -->
+  <circle cx="256" cy="188" r="8" fill="#18181B" />
+  <path d="M 250 178 C 250 174 253 170 256 170 C 259 170 262 174 262 178 Z" fill="#18181B" />
+</svg>

@@ -28,6 +28,7 @@ import {
   useToast,
 } from "@reminder/ui";
 import { createReminderSchema, reminderPresets } from "@reminder/domain";
+import { useTheme, type Theme } from "@/lib/theme-provider";
 
 import { parseAmount } from "@/lib/amount";
 
@@ -1245,6 +1246,7 @@ function SettingsModal({
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState<"email" | "telegram" | null>(null);
   const [testToConfirm, setTestToConfirm] = useState<"email" | "telegram" | null>(null);
+  const { theme, setTheme } = useTheme();
   useEffect(() => {
     if (open) {
       setDraft(settings);
@@ -1331,6 +1333,19 @@ function SettingsModal({
                     configured.
                   </span>
                 )}
+              </label>
+              <label className="field field--wide">
+                Appearance / Theme
+                <Select
+                  aria-label="Appearance / Theme"
+                  value={theme}
+                  onValueChange={(value) => setTheme(value as Theme)}
+                  options={[
+                    { value: "system", label: "System default" },
+                    { value: "light", label: "Light mode" },
+                    { value: "dark", label: "Dark mode" },
+                  ]}
+                />
               </label>
               <fieldset className="field field--wide">
                 <legend>Notifications</legend>

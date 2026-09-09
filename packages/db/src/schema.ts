@@ -5,6 +5,7 @@ import {
   check,
   date,
   index,
+  jsonb,
   pgEnum,
   pgTable,
   smallint,
@@ -149,3 +150,71 @@ export const notificationDeliveries = pgTable(
     index("notification_deliveries_reminder_history").on(table.reminderId, table.createdAt),
   ],
 );
+
+export const notes = pgTable(
+  "notes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: varchar("title", { length: 255 }).notNull(),
+    content: text("content").notNull().default(""),
+    tags: jsonb("tags").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    isPinned: boolean("is_pinned").notNull().default(false),
+    isArchived: boolean("is_archived").notNull().default(false),
+    createdAt,
+    updatedAt,
+  },
+  (table) => [
+    index("notes_pinned_order").on(table.isPinned, table.isArchived, table.updatedAt),
+    index("notes_archived_idx").on(table.isArchived),
+  ],
+);
+
+export const projects = pgTable("projects", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 120 }).notNull(),
+  description: text("description"),
+  createdAt,
+  updatedAt,
+});
+
+export const projectEnvironments = pgTable(
+  "project_environments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    name: varchar("name", { length: 60 }).notNull(),
+    createdAt,
+    updatedAt,
+  },
+  (table) => [
+    uniqueIndex("project_environments_project_name").on(table.projectId, table.name),
+  ],
+);
+
+export const projectSecrets = pgTable(
+  "project_secrets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    environmentId: uuid("environment_id")
+      .references(() => projectEnvironments.id, { onDelete: "cascade" })
+      .notNull(),
+    key: varchar("key", { length: 255 }).notNull(),
+    encryptedValue: text("encrypted_value").notNull(),
+    iv: varchar("iv", { length: 64 }).notNull(),
+    authTag: varchar("auth_tag", { length: 64 }).notNull(),
+    comment: text("comment"),
+    isSecret: boolean("is_secret").notNull().default(true),
+    createdAt,
+    updatedAt,
+  },
+  (table) => [
+    uniqueIndex("project_secrets_env_key").on(table.environmentId, table.key),
+    index("project_secrets_project_env").on(table.projectId, table.environmentId),
+  ],
+);
+

@@ -1,22 +1,50 @@
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
+import "@/styles/globals.css";
+import { ThemeProvider } from "@/lib/theme-provider";
+import { themeInitScript } from "@/lib/theme-script";
+import { AppHeader } from "./app-header";
 import { AppProviders } from "./providers";
 
-import "@/styles/globals.css";
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
-  title: "Reminder",
-  description: "Self-hosted recurring reminders for birthdays, bills, and obligations.",
+  title: "Workspace - Notes, Reminders & Secrets",
+  description: "Personal productivity workspace for your reminders, notes, and project environment secrets.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+    shortcut: "/favicon.ico",
+  },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html
+      lang="en"
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className={GeistSans.className}>
-        <AppProviders>{children}</AppProviders>
+        <ThemeProvider>
+          <AppProviders>
+            <AppHeader />
+            {children}
+          </AppProviders>
+        </ThemeProvider>
       </body>
     </html>
   );

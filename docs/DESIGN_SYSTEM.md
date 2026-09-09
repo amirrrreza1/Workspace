@@ -195,7 +195,7 @@ Urgency color is paired with text and icon. A card border remains ink; avoid tur
 
 ### Destructive
 
-- White surface, red text and border by default; solid red only in the final confirmation dialog.
+- White surface, red text, 3 px ink border, 4–6 px radius, 4 px hard shadow.
 - Label with the exact object: “Delete reminder.”
 
 ### Icon button
