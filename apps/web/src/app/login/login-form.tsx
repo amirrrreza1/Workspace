@@ -65,7 +65,7 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
           <WorkspaceIcon size={48} />
         </span>
         <div className="login-heading">
-          <h1>Reminder</h1>
+          <h1>Workspace</h1>
           <p>Enter the password to open your dashboard.</p>
         </div>
 

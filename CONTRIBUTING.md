@@ -1,6 +1,6 @@
-# Contributing to Reminder
+# Contributing to Workspace
 
-Thank you for helping build a small, reliable, self-hosted reminder system. This project values explicit behavior, focused changes, respectful review, and tests for calendar/notification edge cases.
+Thank you for helping build a reliable, self-hosted productivity workspace. This project values explicit behavior, focused changes, respectful review, and tests for calendar/notification edge cases.
 
 ## Project stage
 

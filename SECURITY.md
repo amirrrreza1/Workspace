@@ -1,6 +1,6 @@
 # Security policy
 
-Reminder stores personal schedules and can send external messages using privileged provider credentials. Security reports are welcome and should be handled privately.
+Workspace stores personal productivity data and can send external messages using privileged provider credentials. Security reports are welcome and should be handled privately.
 
 ## Supported versions
 

@@ -2,7 +2,7 @@
 
 | Field        | Value                                                      |
 | ------------ | ---------------------------------------------------------- |
-| Product      | Reminder                                                   |
+| Product      | Workspace                                                  |
 | Release      | MVP / `0.1.0` target                                       |
 | Status       | Approved implementation baseline                           |
 | Audience     | Maintainers, designers, contributors, QA, and self-hosters |
@@ -10,7 +10,7 @@
 
 ## 1. Product vision
 
-Reminder makes recurring obligations visible and dependable without becoming a calendar, finance system, or productivity suite. A self-hoster should be able to open one screen, understand what is coming, and trust that configured email and Telegram notifications will be attempted on time.
+Workspace makes recurring obligations, personal notes, and project environment secrets visible and dependable in a self-hosted environment. A self-hoster should be able to open one clean screen, understand what is coming, take notes, manage environment configurations, and trust that configured notifications will be attempted on time.
 
 ### Principles
 

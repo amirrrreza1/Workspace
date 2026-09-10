@@ -1,4 +1,4 @@
-name: reminder
+name: workspace
 
 services:
   db:
@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - reminder_db_data:/var/lib/postgresql/data
+      - workspace_db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -28,7 +28,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: reminder-app:local
+    image: workspace-app:local
     command: ["migrate"]
     env_file:
       - .env
@@ -47,7 +47,7 @@ services:
         max-file: "3"
 
   web:
-    image: reminder-app:local
+    image: workspace-app:local
     command: ["web"]
     init: true
     env_file:
@@ -83,7 +83,7 @@ services:
         max-file: "3"
 
   worker:
-    image: reminder-app:local
+    image: workspace-app:local
     command: ["worker"]
     init: true
     env_file:
@@ -114,4 +114,4 @@ networks:
     driver: bridge
 
 volumes:
-  reminder_db_data:
+  workspace_db_data:

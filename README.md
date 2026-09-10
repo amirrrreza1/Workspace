@@ -1,6 +1,6 @@
-# Reminder
+# Workspace
 
-Reminder is a small, self-hosted application for recurring events and obligations: birthdays, subscriptions, installments, rent, bills, insurance renewals, maintenance, and custom cycles. It keeps the product surface intentionally narrow: one dashboard, one add/edit modal, and one settings modal.
+Workspace is a self-hosted personal productivity workspace for reminders, notes, and environment secrets. It brings together recurring obligations, markdown notes, and encrypted project environment secrets into a single, clean dashboard.
 
 > **Project status:** Phase 4 notification delivery is implemented. The dashboard, durable PostgreSQL scheduler/queue, SMTP and Telegram adapters, retries, lease recovery, and asynchronous provider tests are runnable. Operations and release hardening remain in Phase 5.
 
@@ -138,4 +138,4 @@ The best starting point is [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-[MIT](LICENSE) © 2026 Reminder contributors.
+[MIT](LICENSE) © 2026 Workspace contributors.

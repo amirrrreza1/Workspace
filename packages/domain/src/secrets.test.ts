@@ -11,10 +11,10 @@ import {
 describe("secrets domain", () => {
   it("validates project creation", () => {
     const parsed = createProjectSchema.parse({
-      name: "Reminder App",
-      description: "My self-hosted reminder app",
+      name: "Workspace App",
+      description: "Main workspace",
     });
-    expect(parsed.name).toBe("Reminder App");
+    expect(parsed.name).toBe("Workspace App");
     expect(parsed.defaultEnvironments).toEqual(["development", "staging", "production"]);
   });
 

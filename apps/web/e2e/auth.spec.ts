@@ -8,7 +8,7 @@ const signInButton = "Sign in";
 test("sends an unauthenticated visitor to the login page", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
-  await expect(page.getByRole("heading", { name: "Reminder" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Workspace" })).toBeVisible();
   await expect(page.getByLabel(passwordField)).toBeVisible();
   await expect(page.locator("header.app-header")).not.toBeVisible();
 });

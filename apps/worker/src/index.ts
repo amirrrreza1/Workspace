@@ -45,8 +45,8 @@ function messageFor(delivery: ClaimedDelivery): NotificationMessage {
   if (delivery.kind === "provider_test") {
     return {
       reminderId: delivery.id,
-      title: "Reminder provider test",
-      body: "This is a test message from Reminder. Your provider configuration can send notifications.",
+      title: "Workspace provider test",
+      body: "This is a test message from Workspace. Your provider configuration can send notifications.",
     };
   }
 

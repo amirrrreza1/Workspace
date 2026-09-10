@@ -1,6 +1,6 @@
 # Testing and quality strategy
 
-Reminder’s risk is concentrated in recurrence math, timezones, durable delivery, provider redaction, and modal accessibility. The test strategy gives those paths more depth than ordinary card rendering.
+Workspace’s risk is concentrated in recurrence math, timezones, durable delivery, provider redaction, and modal accessibility. The test strategy gives those paths more depth than ordinary card rendering.
 
 ## 1. Test layers
 

@@ -25,8 +25,8 @@ References: [Next.js self-hosting](https://nextjs.org/docs/app/guides/self-hosti
 flowchart TB
     Person["Self-hosted user"]
     Proxy["Optional authenticated TLS reverse proxy"]
-    Web["Reminder web/API"]
-    Worker["Reminder scheduler/delivery worker"]
+    Web["Workspace web/API"]
+    Worker["Workspace scheduler/delivery worker"]
     DB[("PostgreSQL")]
     SMTP["SMTP provider"]
     TG["Telegram Bot API"]

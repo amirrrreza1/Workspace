@@ -21,14 +21,14 @@ The completed `compose.yaml` must define:
 | Service   | Image/command                           | Dependency           | Published port     |
 | --------- | --------------------------------------- | -------------------- | ------------------ |
 | `db`      | Pinned PostgreSQL                       | none                 | none               |
-| `migrate` | Reminder image, `migrate` command       | healthy `db`         | none               |
-| `web`     | Reminder image, `web` command           | successful `migrate` | `${APP_PORT}:3000` |
-| `worker`  | Reminder image, `worker` command        | successful `migrate` | none               |
+| `migrate` | Workspace image, `migrate` command      | healthy `db`         | none               |
+| `web`     | Workspace image, `web` command          | successful `migrate` | `${APP_PORT}:3000` |
+| `worker`  | Workspace image, `worker` command       | successful `migrate` | none               |
 | `backup`  | PostgreSQL client, opt-in `ops` profile | healthy `db`         | none               |
 
 Required behavior:
 
-- Database uses a named volume such as `reminder_db_data`.
+- Database uses a named volume such as `workspace_db_data`.
 - `db` has a `pg_isready` health check.
 - `migrate` is a one-shot job and exits non-zero on migration failure.
 - `web` readiness checks `/api/health/ready`; liveness checks `/api/health/live`.
@@ -44,8 +44,8 @@ Required behavior:
 Once an implementation release exists:
 
 ```bash
-git clone <repository-url> reminder
-cd reminder
+git clone <repository-url> workspace
+cd workspace
 cp .env.example .env
 # Edit .env and replace every placeholder.
 docker compose config

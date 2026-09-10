@@ -1,8 +1,8 @@
 # Design system
 
-Reminder uses an original **warm neo-brutalist utility** style inspired by the visual language of [GitReverse](https://www.gitreverse.com/): warm paper-like backgrounds, dark structural outlines, hard offset shadows, compact corner radii, bold type, and a restrained red accent. The project does not copy GitReverse branding, content, layouts, or source code.
+Workspace uses an original **warm neo-brutalist utility** style inspired by the visual language of [GitReverse](https://www.gitreverse.com/): warm paper-like backgrounds, dark structural outlines, hard offset shadows, compact corner radii, bold type, and a restrained red accent. The project does not copy GitReverse branding, content, layouts, or source code.
 
-The reference was visually inspected on 2026-07-29. Observed cues included an off-white `#FFFDF8` canvas, cream `#FFF4DA` feature surface, near-black `#18181B` outlines, red `#D31611` actions, sand `#EBDBB7` chips, 3 px borders, 4–12 px radii, and offset dark shadow blocks. Reminder adapts those cues to dense, recurring information rather than a single landing-page form.
+The reference was visually inspected on 2026-07-29. Observed cues included an off-white `#FFFDF8` canvas, cream `#FFF4DA` feature surface, near-black `#18181B` outlines, red `#D31611` actions, sand `#EBDBB7` chips, 3 px borders, 4–12 px radii, and offset dark shadow blocks. Workspace adapts those cues to dense, recurring information rather than a single landing-page form.
 
 ## 1. Design goals
 
@@ -93,7 +93,7 @@ Hard shadows are reserved for primary cards, modal shells, and high-priority con
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────┐
-│ Reminder                                      [Settings] [＋ Add reminder]│
+│ Workspace                                     [Settings] [＋ Add reminder]│
 ├──────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │ Never miss what comes around.             12 active · 3 due this week   │
@@ -133,10 +133,10 @@ Do not use masonry; stable rows make scanning and keyboard order predictable.
 
 ### Header
 
-- Wordmark: “Reminder”; ink text with the final syllable or dot accent in red, but no resemblance to GitReverse’s mark.
+- Wordmark: “Workspace”; ink text with the final syllable or dot accent in red, but no resemblance to GitReverse’s mark.
 - Settings: secondary outlined button with icon and text on desktop; icon with accessible label on narrow mobile.
 - Add reminder: red primary button. It remains visible without scrolling.
-- At 360 px, the brand may shorten visually to an `R` mark while its accessible name remains “Reminder home.”
+- At 360 px, the brand may shorten visually to an mark while its accessible name remains “Workspace home.”
 
 ### Summary
 

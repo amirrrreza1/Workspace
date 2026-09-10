@@ -1,8 +1,8 @@
 {
-  "name": "reminder",
+  "name": "workspace",
   "private": true,
   "version": "0.0.0",
-  "description": "Self-hosted recurring reminder dashboard with email and Telegram notifications",
+  "description": "Self-hosted personal productivity workspace for reminders, notes, and environment secrets",
   "packageManager": "pnpm@10.14.0",
   "engines": {
     "node": ">=24.0.0"

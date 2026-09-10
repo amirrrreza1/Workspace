@@ -598,7 +598,7 @@ export function SecretsDashboard() {
                 Project name
                 <input
                   required
-                  placeholder="e.g. Reminder App, Store Backend"
+                  placeholder="e.g. Workspace App, Store Backend"
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                 />
