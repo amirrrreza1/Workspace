@@ -7,13 +7,14 @@ import {
   type Project,
   type ProjectEnvironment,
   type ProjectSecret,
+  type UpdateEnvironmentInput,
   type UpdateProjectInput,
   type UpsertSecretInput,
 } from "@reminder/domain";
 import type { Sql } from "postgres";
 
 import { decryptSecret, encryptSecret } from "./crypto.js";
-import { NotFoundError } from "./errors.js";
+import { ConflictError, NotFoundError } from "./errors.js";
 import { createSql } from "./index.js";
 
 type ProjectRow = {
@@ -241,6 +242,15 @@ export class SecretsRepository {
 
   async createEnvironment(projectId: string, data: CreateEnvironmentInput): Promise<ProjectEnvironment> {
     return this.withSql(async (sql) => {
+      const duplicate = await sql<EnvironmentRow[]>`
+        select id from project_environments
+        where project_id = ${projectId} and name = ${data.name}
+        limit 1
+      `;
+      if (duplicate.length > 0) {
+        throw new ConflictError(`Environment "${data.name}" already exists in this project.`);
+      }
+
       const rows = await sql<EnvironmentRow[]>`
         insert into project_environments (project_id, name)
         values (${projectId}, ${data.name})
@@ -249,6 +259,59 @@ export class SecretsRepository {
       const row = rows[0];
       if (!row) throw new Error("Could not create environment.");
       return rowToEnvironment(row);
+    });
+  }
+
+  async updateEnvironment(
+    projectId: string,
+    envId: string,
+    data: UpdateEnvironmentInput,
+  ): Promise<ProjectEnvironment> {
+    return this.withSql(async (sql) => {
+      const existingRows = await sql<EnvironmentRow[]>`
+        select
+          e.id,
+          e.project_id,
+          e.name,
+          e.created_at,
+          e.updated_at,
+          count(s.id) as secret_count
+        from project_environments e
+        left join project_secrets s on s.environment_id = e.id
+        where e.id = ${envId} and e.project_id = ${projectId}
+        group by e.id
+        limit 1
+      `;
+      const existing = existingRows[0];
+      if (!existing) throw new NotFoundError("Environment not found.");
+
+      if (data.name !== existing.name) {
+        const duplicate = await sql<EnvironmentRow[]>`
+          select id
+          from project_environments
+          where project_id = ${projectId} and name = ${data.name} and id != ${envId}
+          limit 1
+        `;
+        if (duplicate.length > 0) {
+          throw new ConflictError(`Environment "${data.name}" already exists in this project.`);
+        }
+      }
+
+      const rows = await sql<EnvironmentRow[]>`
+        update project_environments
+        set
+          name = ${data.name},
+          updated_at = now()
+        where id = ${envId} and project_id = ${projectId}
+        returning id, project_id, name, created_at, updated_at
+      `;
+      const updated = rows[0];
+      if (!updated) throw new NotFoundError("Environment not found.");
+
+      return {
+        ...rowToEnvironment(updated),
+        secretCount: Number(existing.secret_count ?? 0),
+      };
     });
   }
 

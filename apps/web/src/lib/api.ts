@@ -3,6 +3,8 @@ import { ZodError } from "zod";
 
 import { getConfig } from "@reminder/config";
 import {
+  BackupRepository,
+  ConflictError,
   NotFoundError,
   NotificationRepository,
   NotesRepository,
@@ -31,6 +33,11 @@ export function notesRepository(): NotesRepository {
 export function secretsRepository(): SecretsRepository {
   const config = getConfig();
   return new SecretsRepository(config.DATABASE_URL, config.SECRETS_MASTER_KEY);
+}
+
+export function backupRepository(): BackupRepository {
+  const config = getConfig();
+  return new BackupRepository(config.DATABASE_URL);
 }
 
 export function providerStatus() {
@@ -96,6 +103,13 @@ export function errorResponse(error: unknown): NextResponse {
       NextResponse.json(
         { error: { code: "NOT_FOUND", message: error.message, meta: null } },
         { status: 404 },
+      ),
+    );
+  if (error instanceof ConflictError)
+    return noStore(
+      NextResponse.json(
+        { error: { code: "CONFLICT", message: error.message, meta: null } },
+        { status: 409 },
       ),
     );
   if (error instanceof StaleWriteError)

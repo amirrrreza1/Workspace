@@ -212,19 +212,27 @@ export type TelegramProviderOptions = {
   chatId: string;
 };
 
-function telegramFailure(status: number, retryAfterMs?: number): NotificationProviderError {
+function telegramFailure(
+  status: number,
+  retryAfterMs?: number,
+  detail?: string,
+): NotificationProviderError {
   if (status === 401 || status === 403)
     return new NotificationProviderError(
       "authentication",
       "PROVIDER_AUTH_FAILED",
-      "Telegram rejected the configured bot credentials. Check the server environment.",
+      detail
+        ? `Telegram authentication/permission error: ${detail}`
+        : "Telegram rejected the configured bot credentials. Check the server environment.",
       false,
     );
   if (status === 400)
     return new NotificationProviderError(
       "recipient",
       "PROVIDER_RECIPIENT_REJECTED",
-      "Telegram rejected the configured recipient.",
+      detail
+        ? `Telegram request error: ${detail}`
+        : "Telegram rejected the configured recipient.",
       false,
     );
   if (status === 429)
@@ -245,7 +253,7 @@ function telegramFailure(status: number, retryAfterMs?: number): NotificationPro
   return new NotificationProviderError(
     "unknown",
     "PROVIDER_TELEGRAM_REJECTED",
-    "Telegram rejected the message.",
+    detail ? `Telegram rejected request: ${detail}` : "Telegram rejected the message.",
     false,
   );
 }
@@ -325,3 +333,97 @@ export class TelegramNotificationProvider implements NotificationProvider {
     }
   }
 }
+
+export type SendTelegramDocumentOptions = {
+  botToken: string;
+  chatId: string;
+  filename: string;
+  content: string | Uint8Array;
+  caption?: string;
+  contentType?: string;
+};
+
+export async function sendTelegramDocument(
+  options: SendTelegramDocumentOptions,
+): Promise<ProviderReceipt> {
+  if (!options.botToken || !options.chatId) {
+    throw new NotificationProviderError(
+      "configuration",
+      "PROVIDER_NOT_CONFIGURED",
+      "Telegram bot token and chat ID are required.",
+      false,
+    );
+  }
+
+  const formData = new FormData();
+  formData.append("chat_id", options.chatId);
+  if (options.caption) {
+    formData.append("caption", options.caption);
+    formData.append("parse_mode", "HTML");
+  }
+
+  const fileBlob = new Blob([options.content], {
+    type: options.contentType || "application/json",
+  });
+  formData.append("document", fileBlob, options.filename);
+
+  const abort = new AbortController();
+  const timeout = setTimeout(() => abort.abort(), 30_000);
+
+  try {
+    const response = await fetch(
+      `https://api.telegram.org/bot${options.botToken}/sendDocument`,
+      {
+        method: "POST",
+        body: formData,
+        signal: abort.signal,
+      },
+    );
+
+    const retryAfter = Number(response.headers.get("retry-after"));
+    const payload: unknown = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      const description =
+        typeof payload === "object" &&
+        payload &&
+        "description" in payload &&
+        typeof payload.description === "string"
+          ? payload.description
+          : undefined;
+
+      throw telegramFailure(
+        response.status,
+        Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : undefined,
+        description,
+      );
+    }
+
+    const messageId =
+      typeof payload === "object" &&
+      payload &&
+      "result" in payload &&
+      typeof payload.result === "object" &&
+      payload.result &&
+      "message_id" in payload.result &&
+      typeof payload.result.message_id === "number"
+        ? String(payload.result.message_id)
+        : undefined;
+
+    return {
+      ...(messageId ? { providerMessageId: messageId } : {}),
+      acceptedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    if (isProviderError(error)) throw error;
+    throw new NotificationProviderError(
+      "network",
+      "PROVIDER_NETWORK_ERROR",
+      "Telegram could not be reached.",
+      true,
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+

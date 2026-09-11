@@ -9,7 +9,7 @@ export default defineConfig({
   fullyParallel: true,
   reporter: "list",
   use: {
-    baseURL: "http://127.0.0.1:4310",
+    baseURL: "http://127.0.0.1:4380",
     locale: "en-US",
     timezoneId: "UTC",
     colorScheme: "light",
@@ -20,9 +20,9 @@ export default defineConfig({
   webServer: {
     command:
       process.platform === "win32"
-        ? "pnpm.cmd --filter @reminder/web exec next dev --port 4310"
-        : "pnpm --filter @reminder/web exec next dev --port 4310",
-    url: "http://127.0.0.1:4310",
+        ? "pnpm.cmd --filter @reminder/web exec next dev --port 4380"
+        : "pnpm --filter @reminder/web exec next dev --port 4380",
+    url: "http://127.0.0.1:4380",
     // Next never overrides a value already in process.env, so this wins over
     // apps/web/.env and the suite never needs the real dashboard password.
     // Note that `reuseExistingServer` means an already-running dev server on 4310

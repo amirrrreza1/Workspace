@@ -46,6 +46,7 @@ const envSchema = z.object({
   EMAIL_TO: z.string().optional().default(""),
   TELEGRAM_BOT_TOKEN: z.string().optional().default(""),
   TELEGRAM_CHAT_ID: z.string().optional().default(""),
+  TELEGRAM_BACKUP_CHAT_ID: z.string().optional().default(""),
   // Optional. Live USD/IRR dashboard conversion. Empty keeps currency locked
   // to DEFAULT_CURRENCY. Get a token at https://nerkh.io/
   NERKH_API_TOKEN: z.string().optional().default(""),

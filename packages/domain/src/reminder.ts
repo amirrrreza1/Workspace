@@ -157,6 +157,7 @@ export const updateSettingsSchema = z
     defaultCurrency: z.enum(currencies),
     emailEnabled: z.boolean(),
     telegramEnabled: z.boolean(),
+    backupTelegramChatId: z.string().max(120).nullable().optional(),
     expectedUpdatedAt: z.string().datetime({ offset: true }),
   })
   .strict();

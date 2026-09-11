@@ -68,6 +68,17 @@ export const createEnvironmentSchema = z.object({
 
 export type CreateEnvironmentInput = z.infer<typeof createEnvironmentSchema>;
 
+export const updateEnvironmentSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Environment name cannot be empty")
+    .max(60, "Environment name must be at most 60 characters")
+    .regex(/^[a-zA-Z0-9_-]+$/, "Environment name must only contain alphanumeric characters, hyphens, and underscores"),
+});
+
+export type UpdateEnvironmentInput = z.infer<typeof updateEnvironmentSchema>;
+
 export const upsertSecretSchema = z.object({
   key: z
     .string()

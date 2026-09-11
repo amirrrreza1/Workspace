@@ -2,6 +2,8 @@
 
 import {
   Check,
+  ChevronDown,
+  ChevronUp,
   CircleAlert,
   Copy,
   Download,
@@ -14,6 +16,7 @@ import {
   LoaderCircle,
   Plus,
   Search,
+  SlidersHorizontal,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -44,6 +47,8 @@ export function SecretsDashboard() {
   const [search, setSearch] = useState("");
   const [revealedSecrets, setRevealedSecrets] = useState<Record<string, boolean>>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [projectDetailsOpen, setProjectDetailsOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   // Modals
   const [newProjectOpen, setNewProjectOpen] = useState(false);
@@ -52,6 +57,12 @@ export function SecretsDashboard() {
 
   const [newEnvOpen, setNewEnvOpen] = useState(false);
   const [newEnvName, setNewEnvName] = useState("");
+  const [newEnvModalError, setNewEnvModalError] = useState<string | null>(null);
+
+  const [editEnvOpen, setEditEnvOpen] = useState(false);
+  const [editingEnv, setEditingEnv] = useState<ProjectEnvironment | null>(null);
+  const [editEnvName, setEditEnvName] = useState("");
+  const [envModalError, setEnvModalError] = useState<string | null>(null);
 
   const [secretModalOpen, setSecretModalOpen] = useState(false);
   const [editingSecret, setEditingSecret] = useState<ProjectSecret | null>(null);
@@ -198,20 +209,70 @@ export function SecretsDashboard() {
     e.preventDefault();
     if (!selectedProjectId || !newEnvName.trim()) return;
     setActionLoading(true);
+    setNewEnvModalError(null);
     try {
       const res = await fetch(`/api/v1/secrets/projects/${selectedProjectId}/environments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newEnvName.trim() }),
       });
-      if (!res.ok) throw new Error("Failed to create environment");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.error?.message || "Failed to create environment");
+      }
       const env = (await res.json()) as ProjectEnvironment;
       setNewEnvOpen(false);
       setNewEnvName("");
       await loadEnvironments(selectedProjectId);
       setSelectedEnvId(env.id);
     } catch (cause) {
-      alert(cause instanceof Error ? cause.message : "Error creating environment.");
+      setNewEnvModalError(cause instanceof Error ? cause.message : "Error creating environment.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Open edit environment modal
+  const openEditEnv = (env: ProjectEnvironment) => {
+    setEditingEnv(env);
+    setEditEnvName(env.name);
+    setEnvModalError(null);
+    setEditEnvOpen(true);
+  };
+
+  // Open delete environment modal
+  const openDeleteEnv = (env: ProjectEnvironment) => {
+    setDeleteTarget({
+      type: "environment",
+      id: env.id,
+      name: env.name,
+    });
+  };
+
+  // Update environment
+  const handleUpdateEnv = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProjectId || !editingEnv || !editEnvName.trim()) return;
+    setActionLoading(true);
+    setEnvModalError(null);
+    try {
+      const res = await fetch(`/api/v1/secrets/projects/${selectedProjectId}/environments/${editingEnv.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editEnvName.trim() }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.error?.message || "Failed to update environment");
+      }
+      const updated = (await res.json()) as ProjectEnvironment;
+      setEditEnvOpen(false);
+      setEditingEnv(null);
+      setEditEnvName("");
+      await loadEnvironments(selectedProjectId);
+      setSelectedEnvId(updated.id);
+    } catch (cause) {
+      setEnvModalError(cause instanceof Error ? cause.message : "Error updating environment.");
     } finally {
       setActionLoading(false);
     }
@@ -314,18 +375,30 @@ export function SecretsDashboard() {
     setActionLoading(true);
     try {
       if (deleteTarget.type === "project") {
-        await fetch(`/api/v1/secrets/projects/${deleteTarget.id}`, { method: "DELETE" });
+        const res = await fetch(`/api/v1/secrets/projects/${deleteTarget.id}`, { method: "DELETE" });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => null);
+          throw new Error(errorData?.error?.message || "Failed to delete project");
+        }
         await loadProjects();
       } else if (deleteTarget.type === "environment" && selectedProjectId) {
-        await fetch(`/api/v1/secrets/projects/${selectedProjectId}/environments/${deleteTarget.id}`, {
+        const res = await fetch(`/api/v1/secrets/projects/${selectedProjectId}/environments/${deleteTarget.id}`, {
           method: "DELETE",
         });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => null);
+          throw new Error(errorData?.error?.message || "Failed to delete environment");
+        }
         await loadEnvironments(selectedProjectId);
       } else if (deleteTarget.type === "secret" && selectedProjectId && selectedEnvId) {
-        await fetch(
+        const res = await fetch(
           `/api/v1/secrets/projects/${selectedProjectId}/environments/${selectedEnvId}/secrets/${deleteTarget.id}`,
           { method: "DELETE" },
         );
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => null);
+          throw new Error(errorData?.error?.message || "Failed to delete variable");
+        }
         await loadSecrets(selectedProjectId, selectedEnvId);
       }
       setDeleteTarget(null);
@@ -380,25 +453,38 @@ export function SecretsDashboard() {
           </div>
 
           {activeProject && (
-            <div className="secrets-project-meta">
-              <div className="meta-text">
-                <h2>{activeProject.name}</h2>
-                <p>{activeProject.description || "No description provided."}</p>
-              </div>
-              <Button
-                variant="destructive"
-                onClick={() =>
-                  setDeleteTarget({
-                    type: "project",
-                    id: activeProject.id,
-                    name: activeProject.name,
-                  })
-                }
-                aria-label="Delete project"
+            <>
+              <button
+                type="button"
+                className="secrets-project-details-btn"
+                onClick={() => setProjectDetailsOpen((prev) => !prev)}
+                aria-expanded={projectDetailsOpen}
               >
-                <Trash2 size={16} /> Delete project
-              </Button>
-            </div>
+                {projectDetailsOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                <span>Project details & actions</span>
+              </button>
+              <div
+                className={`secrets-project-meta ${!projectDetailsOpen ? "secrets-project-meta--hidden-mobile" : ""}`}
+              >
+                <div className="meta-text">
+                  <h2>{activeProject.name}</h2>
+                  <p>{activeProject.description || "No description provided."}</p>
+                </div>
+                <Button
+                  variant="destructive"
+                  onClick={() =>
+                    setDeleteTarget({
+                      type: "project",
+                      id: activeProject.id,
+                      name: activeProject.name,
+                    })
+                  }
+                  aria-label="Delete project"
+                >
+                  <Trash2 size={16} /> Delete project
+                </Button>
+              </div>
+            </>
           )}
         </section>
 
@@ -407,21 +493,58 @@ export function SecretsDashboard() {
             {/* Environment Tabs */}
             <div className="env-tabs-bar">
               <div className="env-tabs-list">
-                {environments.map((env) => (
-                  <button
-                    type="button"
-                    key={env.id}
-                    className={`env-tab ${env.id === selectedEnvId ? "env-tab--active" : ""}`}
-                    onClick={() => setSelectedEnvId(env.id)}
-                  >
-                    <span>{env.name}</span>
-                    <span className="env-pill">{env.secretCount}</span>
-                  </button>
-                ))}
+                {environments.map((env) => {
+                  const isActive = env.id === selectedEnvId;
+                  return (
+                    <div
+                      key={env.id}
+                      className={`env-tab ${isActive ? "env-tab--active" : ""}`}
+                    >
+                      <button
+                        type="button"
+                        className="env-tab-btn"
+                        onClick={() => setSelectedEnvId(env.id)}
+                        title={`Switch to ${env.name}`}
+                      >
+                        <span>{env.name}</span>
+                        <span className="env-pill">{env.secretCount}</span>
+                      </button>
+                      <div className="env-tab-actions">
+                        <button
+                          type="button"
+                          className="env-tab-action"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditEnv(env);
+                          }}
+                          title={`Edit environment ${env.name}`}
+                          aria-label={`Edit environment ${env.name}`}
+                        >
+                          <Edit3 size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          className="env-tab-action env-tab-action--danger"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteEnv(env);
+                          }}
+                          title={`Delete environment ${env.name}`}
+                          aria-label={`Delete environment ${env.name}`}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
                 <button
                   type="button"
                   className="env-tab env-tab--add"
-                  onClick={() => setNewEnvOpen(true)}
+                  onClick={() => {
+                    setNewEnvModalError(null);
+                    setNewEnvOpen(true);
+                  }}
                   title="Add Environment"
                 >
                   <Plus size={14} /> Add env
@@ -429,17 +552,63 @@ export function SecretsDashboard() {
               </div>
             </div>
 
-            {/* Controls Toolbar */}
-            <section className="dashboard-controls" aria-label="Secrets controls">
+            {environments.length === 0 ? (
+              <div className="empty-state">
+                <KeyRound aria-hidden="true" size={40} />
+                <h2>No Environments Yet</h2>
+                <p>Create an environment (such as development, staging, or production) to start managing secrets.</p>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setNewEnvModalError(null);
+                    setNewEnvOpen(true);
+                  }}
+                >
+                  <Plus size={16} /> Add environment
+                </Button>
+              </div>
+            ) : (
+              <>
+                {activeEnvironment && (
+                  <div className="env-active-bar">
+                    <div className="env-active-info">
+                      <span className="text-muted">Environment:</span>
+                      <strong>{activeEnvironment.name}</strong>
+                      <span className="env-pill">{activeEnvironment.secretCount} variables</span>
+                    </div>
+                    <div className="env-active-actions">
+                      <Button
+                        variant="ghost"
+                        onClick={() => openEditEnv(activeEnvironment)}
+                        aria-label={`Edit environment ${activeEnvironment.name}`}
+                      >
+                        <Edit3 size={14} /> Edit environment
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => openDeleteEnv(activeEnvironment)}
+                        aria-label={`Delete environment ${activeEnvironment.name}`}
+                        className="text-destructive"
+                      >
+                        <Trash2 size={14} /> Delete environment
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Controls Toolbar */}
+                <section className="dashboard-controls" aria-label="Secrets controls">
               <div className="dashboard-actions">
-                <Button variant="secondary" onClick={handleOpenExport} disabled={secrets.length === 0}>
-                  <Download aria-hidden="true" size={16} />
-                  Export .env
-                </Button>
-                <Button variant="secondary" onClick={() => setImportModalOpen(true)}>
-                  <Upload aria-hidden="true" size={16} />
-                  Import .env
-                </Button>
+                <div className={`secrets-tools-group ${toolsOpen ? "secrets-tools-group--open" : ""}`}>
+                  <Button variant="secondary" onClick={handleOpenExport} disabled={secrets.length === 0}>
+                    <Download aria-hidden="true" size={16} />
+                    Export .env
+                  </Button>
+                  <Button variant="secondary" onClick={() => setImportModalOpen(true)}>
+                    <Upload aria-hidden="true" size={16} />
+                    Import .env
+                  </Button>
+                </div>
                 <Button variant="primary" onClick={openCreateSecret}>
                   <Plus aria-hidden="true" size={16} />
                   Add variable
@@ -458,6 +627,16 @@ export function SecretsDashboard() {
                     />
                   </span>
                 </label>
+                <button
+                  type="button"
+                  className={`filter-toggle-btn ${toolsOpen ? "filter-toggle-btn--open" : ""}`}
+                  onClick={() => setToolsOpen((prev) => !prev)}
+                  aria-label={toolsOpen ? "Hide tools" : "Show tools"}
+                  aria-expanded={toolsOpen}
+                >
+                  <SlidersHorizontal aria-hidden="true" size={16} />
+                  <span>Tools</span>
+                </button>
               </div>
             </section>
 
@@ -570,6 +749,8 @@ export function SecretsDashboard() {
             )}
           </>
         )}
+      </>
+    )}
 
         {projects.length === 0 && !loading && (
           <div className="empty-state">
@@ -627,7 +808,13 @@ export function SecretsDashboard() {
       </Dialog>
 
       {/* New Environment Modal */}
-      <Dialog open={newEnvOpen} onOpenChange={setNewEnvOpen}>
+      <Dialog
+        open={newEnvOpen}
+        onOpenChange={(open) => {
+          setNewEnvOpen(open);
+          if (!open) setNewEnvModalError(null);
+        }}
+      >
         <DialogContent>
           <form onSubmit={handleCreateEnv}>
             <DialogHeader>
@@ -636,6 +823,12 @@ export function SecretsDashboard() {
                 Create a distinct environment for variables (e.g. `test`, `local`, `production`).
               </DialogDescription>
             </DialogHeader>
+            {newEnvModalError && (
+              <div className="status-banner status-banner--error" style={{ margin: "var(--space-3) 0" }}>
+                <CircleAlert aria-hidden="true" size={16} />
+                <span>{newEnvModalError}</span>
+              </div>
+            )}
             <div className="dialog-fields">
               <label className="field field--wide">
                 Environment name
@@ -643,7 +836,10 @@ export function SecretsDashboard() {
                   required
                   placeholder="e.g. testing, local, production-eu"
                   value={newEnvName}
-                  onChange={(e) => setNewEnvName(e.target.value)}
+                  onChange={(e) => {
+                    setNewEnvName(e.target.value);
+                    if (newEnvModalError) setNewEnvModalError(null);
+                  }}
                 />
               </label>
             </div>
@@ -654,6 +850,59 @@ export function SecretsDashboard() {
               <Button variant="primary" type="submit" disabled={actionLoading || !newEnvName.trim()}>
                 {actionLoading && <LoaderCircle className="spin" size={16} />}
                 Add environment
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Environment Modal */}
+      <Dialog
+        open={editEnvOpen}
+        onOpenChange={(open) => {
+          setEditEnvOpen(open);
+          if (!open) setEnvModalError(null);
+        }}
+      >
+        <DialogContent>
+          <form onSubmit={handleUpdateEnv}>
+            <DialogHeader>
+              <DialogTitle>Edit environment</DialogTitle>
+              <DialogDescription>
+                Update the environment name. Must only contain alphanumeric characters, hyphens, and underscores.
+              </DialogDescription>
+            </DialogHeader>
+            {envModalError && (
+              <div className="status-banner status-banner--error" style={{ margin: "var(--space-3) 0" }}>
+                <CircleAlert aria-hidden="true" size={16} />
+                <span>{envModalError}</span>
+              </div>
+            )}
+            <div className="dialog-fields">
+              <label className="field field--wide">
+                Environment name
+                <input
+                  required
+                  placeholder="e.g. testing, local, production-eu"
+                  value={editEnvName}
+                  onChange={(e) => {
+                    setEditEnvName(e.target.value);
+                    if (envModalError) setEnvModalError(null);
+                  }}
+                />
+              </label>
+            </div>
+            <DialogFooter>
+              <Button variant="secondary" type="button" onClick={() => setEditEnvOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={actionLoading || !editEnvName.trim() || editEnvName.trim() === editingEnv?.name}
+              >
+                {actionLoading && <LoaderCircle className="spin" size={16} />}
+                Save changes
               </Button>
             </DialogFooter>
           </form>
@@ -814,14 +1063,17 @@ export function SecretsDashboard() {
           <DialogHeader>
             <DialogTitle>Delete {deleteTarget?.type}?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &quot;{deleteTarget?.name}&quot;? This cannot be undone.
+              {deleteTarget?.type === "environment"
+                ? `Are you sure you want to delete the "${deleteTarget?.name}" environment and all of its secrets? This action cannot be undone.`
+                : `Are you sure you want to delete "${deleteTarget?.name}"? This cannot be undone.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="secondary" type="button" onClick={() => setDeleteTarget(null)}>
               Cancel
             </Button>
-            <Button variant="destructive" type="button" onClick={handleDeleteConfirm}>
+            <Button variant="destructive" type="button" onClick={handleDeleteConfirm} disabled={actionLoading}>
+              {actionLoading && <LoaderCircle className="spin" size={16} />}
               Delete {deleteTarget?.type}
             </Button>
           </DialogFooter>

@@ -1,3 +1,4 @@
+export * from "./backup.js";
 export * from "./calendar.js";
 export * from "./money.js";
 export * from "./notes.js";

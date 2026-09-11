@@ -5,6 +5,7 @@ import {
   createProjectSchema,
   formatEnvFile,
   parseEnvFile,
+  updateEnvironmentSchema,
   upsertSecretSchema,
 } from "./secrets.js";
 
@@ -21,6 +22,14 @@ describe("secrets domain", () => {
   it("validates environment name regex", () => {
     expect(createEnvironmentSchema.parse({ name: "staging-eu_1" })).toEqual({ name: "staging-eu_1" });
     expect(() => createEnvironmentSchema.parse({ name: "staging space" })).toThrow();
+  });
+
+  it("validates update environment schema", () => {
+    expect(updateEnvironmentSchema.parse({ name: "production_us-east" })).toEqual({
+      name: "production_us-east",
+    });
+    expect(() => updateEnvironmentSchema.parse({ name: "invalid name!" })).toThrow();
+    expect(() => updateEnvironmentSchema.parse({ name: "" })).toThrow();
   });
 
   it("validates secret key format", () => {

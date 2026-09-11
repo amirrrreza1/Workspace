@@ -63,8 +63,31 @@ function formatInline(text: string): ReactNode[] {
       continue;
     }
 
+    // Markdown Link [text](url)
+    const linkMatch = remaining.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+|[^\s)]+)\)/);
+    if (linkMatch && linkMatch[1] && linkMatch[2]) {
+      const href =
+        linkMatch[2].startsWith("http://") || linkMatch[2].startsWith("https://")
+          ? linkMatch[2]
+          : `https://${linkMatch[2]}`;
+      tokens.push(
+        <a
+          key={key++}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="note-inline-link"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {linkMatch[1]}
+        </a>,
+      );
+      remaining = remaining.slice(linkMatch[0].length);
+      continue;
+    }
+
     // Regular character/word
-    const nextSpecial = remaining.search(/[`*_~]/);
+    const nextSpecial = remaining.search(/[`*_~[]/);
     if (nextSpecial === -1) {
       tokens.push(remaining);
       break;

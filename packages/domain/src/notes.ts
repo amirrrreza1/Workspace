@@ -1,10 +1,27 @@
 import { z } from "zod";
 
+export const noteLinkSchema = z.object({
+  url: z
+    .string()
+    .trim()
+    .min(1, "URL cannot be empty")
+    .max(2048, "URL must be at most 2048 characters"),
+  title: z
+    .string()
+    .trim()
+    .max(120, "Title must be at most 120 characters")
+    .optional()
+    .default(""),
+});
+
+export type NoteLink = z.infer<typeof noteLinkSchema>;
+
 export type Note = {
   id: string;
   title: string;
   content: string;
   tags: string[];
+  links: NoteLink[];
   isPinned: boolean;
   isArchived: boolean;
   createdAt: string;
@@ -28,6 +45,7 @@ export const createNoteSchema = z.object({
     )
     .max(20, "At most 20 tags are allowed")
     .default([]),
+  links: z.array(noteLinkSchema).max(50, "At most 50 links are allowed").default([]),
   isPinned: z.boolean().default(false),
 });
 
@@ -51,6 +69,7 @@ export const updateNoteSchema = z.object({
     )
     .max(20, "At most 20 tags are allowed")
     .optional(),
+  links: z.array(noteLinkSchema).max(50, "At most 50 links are allowed").optional(),
   isPinned: z.boolean().optional(),
   isArchived: z.boolean().optional(),
   expectedUpdatedAt: z.string().optional(),

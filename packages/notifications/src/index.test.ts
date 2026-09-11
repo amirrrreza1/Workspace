@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { isProviderError, retryDelayMs, TelegramNotificationProvider } from "./index.js";
+import {
+  isProviderError,
+  retryDelayMs,
+  sendTelegramDocument,
+  TelegramNotificationProvider,
+} from "./index.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -56,3 +61,55 @@ describe("Telegram provider", () => {
     );
   });
 });
+
+describe("sendTelegramDocument", () => {
+  it("sends document to telegram and returns providerMessageId", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, result: { message_id: 101 } }), { status: 200 }),
+    );
+    globalThis.fetch = fetchMock;
+
+    const receipt = await sendTelegramDocument({
+      botToken: "token123",
+      chatId: "@my_backup_channel",
+      filename: "backup.json",
+      content: JSON.stringify({ test: true }),
+      caption: "Backup file",
+    });
+
+    expect(receipt.providerMessageId).toBe("101");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(url).toBe("https://api.telegram.org/bottoken123/sendDocument");
+    expect(init?.method).toBe("POST");
+    expect(init?.body).toBeInstanceOf(FormData);
+  });
+
+  it("handles telegram api permission errors cleanly", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          ok: false,
+          error_code: 403,
+          description: "Forbidden: bot is not a member of the channel chat",
+        }),
+        { status: 403 },
+      ),
+    );
+
+    await expect(
+      sendTelegramDocument({
+        botToken: "token123",
+        chatId: "@channel",
+        filename: "backup.json",
+        content: "{}",
+      }),
+    ).rejects.toSatisfy(
+      (error: unknown) =>
+        isProviderError(error) &&
+        error.code === "PROVIDER_AUTH_FAILED" &&
+        error.message.includes("bot is not a member of the channel chat"),
+    );
+  });
+});
+

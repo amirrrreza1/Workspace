@@ -28,7 +28,7 @@ Thumbs.db
 # Generated local certificates and backups
 *.pem
 *.key
-backups/
+/backups/
 
 # Docker
 *.tar

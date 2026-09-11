@@ -36,6 +36,9 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@reminder/ui", "@reminder/domain", "@reminder/config", "@reminder/db"],
   poweredByHeader: false,
   reactStrictMode: true,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;

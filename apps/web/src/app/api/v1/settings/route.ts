@@ -13,13 +13,16 @@ import {
 
 export const dynamic = "force-dynamic";
 
-function presentSettings<T extends { defaultCurrency: "IRR" | "USD" }>(settings: T) {
+function presentSettings<
+  T extends { defaultCurrency: "IRR" | "USD"; backupTelegramChatId?: string | null },
+>(settings: T) {
   const config = getConfig();
   return {
     ...settings,
     defaultCurrency: config.nerkhConfigured
       ? settings.defaultCurrency
       : config.DEFAULT_CURRENCY,
+    backupTelegramChatId: settings.backupTelegramChatId ?? (config.TELEGRAM_BACKUP_CHAT_ID || null),
     providers: providerStatus(),
     currencyConversion: currencyConversionStatus(),
   };
@@ -43,6 +46,7 @@ export async function PATCH(request: Request) {
         presentSettings(
           await repository().updateSettings({
             ...settings,
+            backupTelegramChatId: settings.backupTelegramChatId ?? null,
             defaultCurrency: config.nerkhConfigured
               ? settings.defaultCurrency
               : config.DEFAULT_CURRENCY,

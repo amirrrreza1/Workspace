@@ -15,6 +15,7 @@
     "@reminder/config": "workspace:*",
     "@reminder/db": "workspace:*",
     "@reminder/domain": "workspace:*",
+    "@reminder/notifications": "workspace:*",
     "@reminder/ui": "workspace:*",
     "geist": "^1.4.2",
     "lucide-react": "^0.536.0",

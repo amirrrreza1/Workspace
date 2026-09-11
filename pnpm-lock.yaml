@@ -42,6 +42,9 @@ importers:
       '@reminder/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      '@reminder/notifications':
+        specifier: workspace:*
+        version: link:../../packages/notifications
       '@reminder/ui':
         specifier: workspace:*
         version: link:../../packages/ui

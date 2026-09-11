@@ -9,7 +9,7 @@ import { SESSION_COOKIE_NAME, createSessionToken } from "../src/lib/auth";
  */
 export const TEST_PASSWORD = "playwright-test-password";
 
-export const BASE_URL = "http://127.0.0.1:4310";
+export const BASE_URL = "http://127.0.0.1:4380";
 
 /**
  * Mint a valid session cookie directly instead of driving the form. Tests about

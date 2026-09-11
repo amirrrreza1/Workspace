@@ -42,6 +42,7 @@ export type SettingsRecord = {
   defaultCurrency: CurrencyCode;
   emailEnabled: boolean;
   telegramEnabled: boolean;
+  backupTelegramChatId?: string | null;
   updatedAt: string;
 };
 
@@ -330,9 +331,10 @@ export class ReminderRepository {
           default_currency: CurrencyCode;
           email_enabled: boolean;
           telegram_enabled: boolean;
+          backup_telegram_chat_id: string | null;
           updated_at: Date;
         }[]
-      >`select calendar_system, default_currency, email_enabled, telegram_enabled, updated_at from settings where id = 1`;
+      >`select calendar_system, default_currency, email_enabled, telegram_enabled, backup_telegram_chat_id, updated_at from settings where id = 1`;
       const row = rows[0];
       if (!row) throw new NotFoundError("Settings were not initialized.");
       return {
@@ -340,6 +342,7 @@ export class ReminderRepository {
         defaultCurrency: row.default_currency,
         emailEnabled: row.email_enabled,
         telegramEnabled: row.telegram_enabled,
+        backupTelegramChatId: row.backup_telegram_chat_id ?? null,
         updatedAt: iso(row.updated_at),
       };
     });
@@ -361,9 +364,10 @@ export class ReminderRepository {
             default_currency: CurrencyCode;
             email_enabled: boolean;
             telegram_enabled: boolean;
+            backup_telegram_chat_id: string | null;
             updated_at: Date;
           }[]
-        >`update settings set calendar_system=${input.calendarSystem}, default_currency=${input.defaultCurrency}, email_enabled=${input.emailEnabled}, telegram_enabled=${input.telegramEnabled} where id=1 returning calendar_system, default_currency, email_enabled, telegram_enabled, updated_at`;
+        >`update settings set calendar_system=${input.calendarSystem}, default_currency=${input.defaultCurrency}, email_enabled=${input.emailEnabled}, telegram_enabled=${input.telegramEnabled}, backup_telegram_chat_id=${input.backupTelegramChatId ?? null} where id=1 returning calendar_system, default_currency, email_enabled, telegram_enabled, backup_telegram_chat_id, updated_at`;
         const row = rows[0];
         if (!row) throw new NotFoundError("Settings were not initialized.");
         if (!input.emailEnabled)
@@ -381,6 +385,7 @@ export class ReminderRepository {
           defaultCurrency: row.default_currency,
           emailEnabled: row.email_enabled,
           telegramEnabled: row.telegram_enabled,
+          backupTelegramChatId: row.backup_telegram_chat_id ?? null,
           updatedAt: iso(row.updated_at),
         };
       }),
@@ -394,9 +399,10 @@ export class ReminderRepository {
         default_currency: CurrencyCode;
         email_enabled: boolean;
         telegram_enabled: boolean;
+        backup_telegram_chat_id: string | null;
         updated_at: Date;
       }[]
-    >`select calendar_system, default_currency, email_enabled, telegram_enabled, updated_at from settings where id = 1`;
+    >`select calendar_system, default_currency, email_enabled, telegram_enabled, backup_telegram_chat_id, updated_at from settings where id = 1`;
     const row = rows[0];
     if (!row) throw new NotFoundError("Settings were not initialized.");
     return {
@@ -404,6 +410,7 @@ export class ReminderRepository {
       defaultCurrency: row.default_currency,
       emailEnabled: row.email_enabled,
       telegramEnabled: row.telegram_enabled,
+      backupTelegramChatId: row.backup_telegram_chat_id ?? null,
       updatedAt: iso(row.updated_at),
     };
   }

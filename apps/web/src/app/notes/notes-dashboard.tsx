@@ -3,16 +3,22 @@
 import {
   Archive,
   ArchiveRestore,
+  ArrowUpDown,
   Bold,
+  Check,
   CheckSquare,
   CircleAlert,
   Code,
+  Copy,
   Edit3,
+  ExternalLink,
   FileText,
+  Globe,
   Heading1,
   Heading2,
   Heading3,
   Italic,
+  Link2,
   List,
   ListOrdered,
   LoaderCircle,
@@ -21,6 +27,7 @@ import {
   Plus,
   Quote,
   Search,
+  SlidersHorizontal,
   Strikethrough,
   Tag,
   Trash2,
@@ -39,7 +46,7 @@ import {
   Select,
   Switch,
 } from "@reminder/ui";
-import type { Note, NotesSummary } from "@reminder/domain";
+import type { Note, NoteLink, NotesSummary } from "@reminder/domain";
 import { MarkdownRenderer } from "./markdown-renderer";
 
 type FilterState = {
@@ -53,6 +60,7 @@ type NoteDraft = {
   title: string;
   content: string;
   tags: string[];
+  links: NoteLink[];
   isPinned: boolean;
   isArchived: boolean;
 };
@@ -61,9 +69,18 @@ const initialDraft: NoteDraft = {
   title: "",
   content: "",
   tags: [],
+  links: [],
   isPinned: false,
   isArchived: false,
 };
+
+function getLinkHostname(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
 
 export function NotesDashboard() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -79,15 +96,33 @@ export function NotesDashboard() {
   });
 
   const [allTags, setAllTags] = useState<string[]>([]);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const activeFiltersCount =
+    (filter.tag ? 1 : 0) +
+    (filter.status !== "active" ? 1 : 0) +
+    (filter.sort !== "updated_desc" ? 1 : 0);
   const [modalOpen, setModalOpen] = useState(false);
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [draft, setDraft] = useState<NoteDraft>(initialDraft);
   const [newTagInput, setNewTagInput] = useState("");
+  const [newLinkUrl, setNewLinkUrl] = useState("");
+  const [newLinkTitle, setNewLinkTitle] = useState("");
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+  const scrollingSourceRef = useRef<"editor" | "preview" | null>(null);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [syncScroll, setSyncScroll] = useState(true);
+
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    };
+  }, []);
 
   const loadNotes = useCallback(async () => {
     setLoading(true);
@@ -128,6 +163,8 @@ export function NotesDashboard() {
     setEditingNote(null);
     setDraft(initialDraft);
     setNewTagInput("");
+    setNewLinkUrl("");
+    setNewLinkTitle("");
     setModalOpen(true);
   };
 
@@ -138,10 +175,13 @@ export function NotesDashboard() {
       title: note.title,
       content: note.content,
       tags: [...note.tags],
+      links: [...(note.links || [])],
       isPinned: note.isPinned,
       isArchived: note.isArchived,
     });
     setNewTagInput("");
+    setNewLinkUrl("");
+    setNewLinkTitle("");
     setModalOpen(true);
   };
 
@@ -158,6 +198,7 @@ export function NotesDashboard() {
             title: draft.title.trim(),
             content: draft.content,
             tags: draft.tags,
+            links: draft.links,
             isPinned: draft.isPinned,
             isArchived: draft.isArchived,
             expectedUpdatedAt: editingNote.updatedAt,
@@ -171,6 +212,7 @@ export function NotesDashboard() {
                 title: draft.title.trim(),
                 content: draft.content,
                 tags: draft.tags,
+                links: draft.links,
                 isPinned: draft.isPinned,
                 isArchived: draft.isArchived,
                 updatedAt: new Date().toISOString(),
@@ -185,6 +227,7 @@ export function NotesDashboard() {
             title: draft.title.trim(),
             content: draft.content,
             tags: draft.tags,
+            links: draft.links,
             isPinned: draft.isPinned,
           }),
         });
@@ -208,9 +251,7 @@ export function NotesDashboard() {
         body: JSON.stringify({ isPinned: nextPinned }),
       });
       if (!res.ok) throw new Error("Failed to toggle pin");
-      setNotes((prev) =>
-        prev.map((n) => (n.id === note.id ? { ...n, isPinned: nextPinned } : n)),
-      );
+      setNotes((prev) => prev.map((n) => (n.id === note.id ? { ...n, isPinned: nextPinned } : n)));
       setViewingNote((prev) => (prev?.id === note.id ? { ...prev, isPinned: nextPinned } : prev));
       void loadNotes();
     } catch (cause) {
@@ -230,7 +271,9 @@ export function NotesDashboard() {
       setNotes((prev) =>
         prev.map((n) => (n.id === note.id ? { ...n, isArchived: nextArchived } : n)),
       );
-      setViewingNote((prev) => (prev?.id === note.id ? { ...prev, isArchived: nextArchived } : prev));
+      setViewingNote((prev) =>
+        prev?.id === note.id ? { ...prev, isArchived: nextArchived } : prev,
+      );
       void loadNotes();
     } catch (cause) {
       alert(cause instanceof Error ? cause.message : "Error archiving note.");
@@ -264,6 +307,42 @@ export function NotesDashboard() {
 
   const removeTag = (tagToRemove: string) => {
     setDraft({ ...draft, tags: draft.tags.filter((t) => t !== tagToRemove) });
+  };
+
+  const addLink = () => {
+    const rawUrl = newLinkUrl.trim();
+    if (!rawUrl) return;
+
+    const normalizedUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+    const title = newLinkTitle.trim();
+
+    if (draft.links.some((l) => l.url.toLowerCase() === normalizedUrl.toLowerCase())) {
+      return;
+    }
+
+    setDraft({
+      ...draft,
+      links: [...draft.links, { url: normalizedUrl, title }],
+    });
+    setNewLinkUrl("");
+    setNewLinkTitle("");
+  };
+
+  const removeLink = (indexToRemove: number) => {
+    setDraft({
+      ...draft,
+      links: draft.links.filter((_, idx) => idx !== indexToRemove),
+    });
+  };
+
+  const copyToClipboard = async (url: string, key: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedLinkId(key);
+      setTimeout(() => setCopiedLinkId(null), 2000);
+    } catch {
+      // ignore clipboard error
+    }
   };
 
   // Interactive task toggle on card / detail
@@ -313,6 +392,53 @@ export function NotesDashboard() {
     }
   };
 
+  // Synchronized scroll handlers between editor and preview
+  const handleEditorScroll = () => {
+    if (!syncScroll) return;
+    if (scrollingSourceRef.current === "preview") return;
+
+    scrollingSourceRef.current = "editor";
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
+      scrollingSourceRef.current = null;
+    }, 120);
+
+    const editor = textareaRef.current;
+    const preview = previewRef.current;
+    if (!editor || !preview) return;
+
+    const editorScrollable = editor.scrollHeight - editor.clientHeight;
+    const previewScrollable = preview.scrollHeight - preview.clientHeight;
+
+    if (editorScrollable > 0 && previewScrollable > 0) {
+      const ratio = editor.scrollTop / editorScrollable;
+      preview.scrollTop = ratio * previewScrollable;
+    }
+  };
+
+  const handlePreviewScroll = () => {
+    if (!syncScroll) return;
+    if (scrollingSourceRef.current === "editor") return;
+
+    scrollingSourceRef.current = "preview";
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
+      scrollingSourceRef.current = null;
+    }, 120);
+
+    const editor = textareaRef.current;
+    const preview = previewRef.current;
+    if (!editor || !preview) return;
+
+    const editorScrollable = editor.scrollHeight - editor.clientHeight;
+    const previewScrollable = preview.scrollHeight - preview.clientHeight;
+
+    if (editorScrollable > 0 && previewScrollable > 0) {
+      const ratio = preview.scrollTop / previewScrollable;
+      editor.scrollTop = ratio * editorScrollable;
+    }
+  };
+
   // Helper to insert markdown at cursor
   const insertMarkdown = (prefix: string, suffix = "", defaultText = "") => {
     const textarea = textareaRef.current;
@@ -347,8 +473,7 @@ export function NotesDashboard() {
     const lastNewline = currentText.lastIndexOf("\n", start - 1);
     const lineStart = lastNewline === -1 ? 0 : lastNewline + 1;
 
-    const nextContent =
-      currentText.slice(0, lineStart) + prefix + currentText.slice(lineStart);
+    const nextContent = currentText.slice(0, lineStart) + prefix + currentText.slice(lineStart);
     setDraft({ ...draft, content: nextContent });
 
     setTimeout(() => {
@@ -423,46 +548,70 @@ export function NotesDashboard() {
               </span>
             </label>
 
-            <label className="toolbar-field">
-              Filter by tag
-              <Select
-                aria-label="Filter by tag"
-                value={filter.tag || "all"}
-                onValueChange={(val) => setFilter({ ...filter, tag: val === "all" ? "" : val })}
-                options={[
-                  { value: "all", label: "All tags" },
-                  ...allTags.map((t) => ({ value: t, label: `#${t}` })),
-                ]}
-              />
-            </label>
+            <button
+              type="button"
+              className={`filter-toggle-btn ${activeFiltersCount > 0 ? "filter-toggle-btn--active" : ""} ${mobileFiltersOpen ? "filter-toggle-btn--open" : ""}`}
+              onClick={() => setMobileFiltersOpen((prev) => !prev)}
+              aria-label={mobileFiltersOpen ? "Hide filters" : "Show filters"}
+              aria-expanded={mobileFiltersOpen}
+            >
+              <SlidersHorizontal aria-hidden="true" size={16} />
+              <span>Filters</span>
+              {activeFiltersCount > 0 && (
+                <span className="filter-badge" aria-label={`${activeFiltersCount} active filters`}>
+                  {activeFiltersCount}
+                </span>
+              )}
+            </button>
 
-            <label className="toolbar-field">
-              Status
-              <Select
-                aria-label="Status"
-                value={filter.status}
-                onValueChange={(val) => setFilter({ ...filter, status: val as FilterState["status"] })}
-                options={[
-                  { value: "active", label: "Active notes" },
-                  { value: "pinned", label: "Pinned only" },
-                  { value: "archived", label: "Archived" },
-                ]}
-              />
-            </label>
+            <div
+              className={`toolbar-filters-group ${mobileFiltersOpen ? "toolbar-filters-group--open" : ""}`}
+            >
+              <label className="toolbar-field">
+                Filter by tag
+                <Select
+                  aria-label="Filter by tag"
+                  value={filter.tag || "all"}
+                  onValueChange={(val) => setFilter({ ...filter, tag: val === "all" ? "" : val })}
+                  options={[
+                    { value: "all", label: "All tags" },
+                    ...allTags.map((t) => ({ value: t, label: `#${t}` })),
+                  ]}
+                />
+              </label>
 
-            <label className="toolbar-field">
-              Sort
-              <Select
-                aria-label="Sort"
-                value={filter.sort}
-                onValueChange={(val) => setFilter({ ...filter, sort: val as FilterState["sort"] })}
-                options={[
-                  { value: "updated_desc", label: "Recently updated" },
-                  { value: "updated_asc", label: "Oldest updated" },
-                  { value: "title_asc", label: "Title (A–Z)" },
-                ]}
-              />
-            </label>
+              <label className="toolbar-field">
+                Status
+                <Select
+                  aria-label="Status"
+                  value={filter.status}
+                  onValueChange={(val) =>
+                    setFilter({ ...filter, status: val as FilterState["status"] })
+                  }
+                  options={[
+                    { value: "active", label: "Active notes" },
+                    { value: "pinned", label: "Pinned only" },
+                    { value: "archived", label: "Archived" },
+                  ]}
+                />
+              </label>
+
+              <label className="toolbar-field">
+                Sort
+                <Select
+                  aria-label="Sort"
+                  value={filter.sort}
+                  onValueChange={(val) =>
+                    setFilter({ ...filter, sort: val as FilterState["sort"] })
+                  }
+                  options={[
+                    { value: "updated_desc", label: "Recently updated" },
+                    { value: "updated_asc", label: "Oldest updated" },
+                    { value: "title_asc", label: "Title (A–Z)" },
+                  ]}
+                />
+              </label>
+            </div>
           </div>
         </section>
 
@@ -554,6 +703,28 @@ export function NotesDashboard() {
                         <span>{tag}</span>
                       </button>
                     ))}
+                  </div>
+                )}
+
+                {note.links && note.links.length > 0 && (
+                  <div className="note-card-links">
+                    {note.links.map((link, lIdx) => {
+                      const hostname = getLinkHostname(link.url);
+                      return (
+                        <a
+                          key={lIdx}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="note-card-link-chip"
+                          onClick={(e) => e.stopPropagation()}
+                          title={link.title ? `${link.title} (${link.url})` : link.url}
+                        >
+                          <ExternalLink size={11} aria-hidden="true" />
+                          <span>{link.title || hostname}</span>
+                        </a>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -649,6 +820,56 @@ export function NotesDashboard() {
                 </div>
               )}
 
+              {viewingNote.links && viewingNote.links.length > 0 && (
+                <div className="note-detail-links-section">
+                  <div className="note-detail-links-header">
+                    <Link2 size={15} aria-hidden="true" />
+                    <span>Links ({viewingNote.links.length})</span>
+                  </div>
+                  <div className="note-detail-links-grid">
+                    {viewingNote.links.map((link, lIdx) => {
+                      const hostname = getLinkHostname(link.url);
+                      const isCopied = copiedLinkId === `view-${lIdx}`;
+                      return (
+                        <div key={lIdx} className="note-detail-link-card">
+                          <div className="note-detail-link-content">
+                            <Globe size={15} className="note-detail-link-icon" aria-hidden="true" />
+                            <div className="note-detail-link-texts">
+                              <a
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="note-detail-link-title"
+                                title={link.url}
+                              >
+                                <span>{link.title || hostname}</span>
+                                <ExternalLink size={12} aria-hidden="true" />
+                              </a>
+                              <span className="note-detail-link-url" title={link.url}>
+                                {link.url}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="icon-button note-detail-link-copy-btn"
+                            onClick={() => copyToClipboard(link.url, `view-${lIdx}`)}
+                            title={isCopied ? "Copied!" : "Copy link URL"}
+                            aria-label={isCopied ? "Copied!" : "Copy link URL"}
+                          >
+                            {isCopied ? (
+                              <Check size={14} className="text-success" />
+                            ) : (
+                              <Copy size={14} />
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="note-detail-content-wrapper">
                 <div className="note-detail-content">
                   <MarkdownRenderer
@@ -663,11 +884,7 @@ export function NotesDashboard() {
 
               <DialogFooter className="note-detail-footer">
                 <div className="note-detail-footer-actions">
-                  <Button
-                    variant="secondary"
-                    type="button"
-                    onClick={() => togglePin(viewingNote)}
-                  >
+                  <Button variant="secondary" type="button" onClick={() => togglePin(viewingNote)}>
                     <Pin size={15} />
                     {viewingNote.isPinned ? "Unpin" : "Pin"}
                   </Button>
@@ -676,11 +893,7 @@ export function NotesDashboard() {
                     type="button"
                     onClick={() => toggleArchive(viewingNote)}
                   >
-                    {viewingNote.isArchived ? (
-                      <ArchiveRestore size={15} />
-                    ) : (
-                      <Archive size={15} />
-                    )}
+                    {viewingNote.isArchived ? <ArchiveRestore size={15} /> : <Archive size={15} />}
                     {viewingNote.isArchived ? "Unarchive" : "Archive"}
                   </Button>
                   <Button
@@ -694,11 +907,7 @@ export function NotesDashboard() {
                 </div>
 
                 <div className="note-detail-footer-main">
-                  <Button
-                    variant="secondary"
-                    type="button"
-                    onClick={() => setViewingNote(null)}
-                  >
+                  <Button variant="secondary" type="button" onClick={() => setViewingNote(null)}>
                     Close
                   </Button>
                   <Button
@@ -747,7 +956,11 @@ export function NotesDashboard() {
                     {draft.tags.map((tag) => (
                       <span key={tag} className="tag-chip tag-chip--removable" dir="auto">
                         #{tag}
-                        <button type="button" onClick={() => removeTag(tag)} aria-label={`Remove tag ${tag}`}>
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          aria-label={`Remove tag ${tag}`}
+                        >
                           <X size={12} />
                         </button>
                       </span>
@@ -778,10 +991,109 @@ export function NotesDashboard() {
                 </div>
               </div>
 
+              {/* Links Section */}
+              <div className="field field--wide">
+                <div className="links-section-header">
+                  <span className="links-section-title">
+                    <Link2 size={15} aria-hidden="true" />
+                    Links
+                  </span>
+                  <span className="field-hint">({draft.links.length}/50)</span>
+                </div>
+
+                <div className="links-input-container">
+                  {draft.links.length > 0 && (
+                    <div className="links-items-list">
+                      {draft.links.map((link, idx) => {
+                        const hostname = getLinkHostname(link.url);
+                        return (
+                          <div key={idx} className="link-item-row">
+                            <Globe size={15} className="link-item-icon" aria-hidden="true" />
+                            <div className="link-item-details">
+                              <a
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="link-item-title-anchor"
+                                title="Open in new tab"
+                              >
+                                <span className="link-item-title">{link.title || hostname}</span>
+                                <ExternalLink size={12} aria-hidden="true" />
+                              </a>
+                              <span className="link-item-url" title={link.url}>
+                                {link.url}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              className="icon-button link-item-remove-btn"
+                              onClick={() => removeLink(idx)}
+                              title="Remove link"
+                              aria-label={`Remove link ${link.title || link.url}`}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="link-add-row">
+                    <div className="link-add-inputs">
+                      <input
+                        type="text"
+                        placeholder="https://example.com or example.com"
+                        value={newLinkUrl}
+                        onChange={(e) => setNewLinkUrl(e.target.value)}
+                        className="link-input-url"
+                        dir="ltr"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addLink();
+                          }
+                        }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Link title or label (optional)"
+                        value={newLinkTitle}
+                        onChange={(e) => setNewLinkTitle(e.target.value)}
+                        className="link-input-title"
+                        dir="auto"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addLink();
+                          }
+                        }}
+                      />
+                    </div>
+                    <Button
+                      variant="secondary"
+                      type="button"
+                      onClick={addLink}
+                      disabled={!newLinkUrl.trim()}
+                    >
+                      <Plus size={16} />
+                      Add link
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
               {/* Editor Container with Live Preview */}
               <div className="field field--wide">
                 <div className="editor-split-container">
-                  <div className="editor-write-pane">
+                  <div
+                    className="editor-write-pane"
+                    onMouseEnter={() => {
+                      if (scrollingSourceRef.current !== "editor") {
+                        scrollingSourceRef.current = null;
+                      }
+                    }}
+                  >
                     <div className="editor-toolbar" role="toolbar" aria-label="Formatting tools">
                       <button
                         type="button"
@@ -900,6 +1212,15 @@ export function NotesDashboard() {
                       >
                         <Minus size={15} />
                       </button>
+                      <button
+                        type="button"
+                        className="toolbar-btn"
+                        onClick={() => insertMarkdown("[", "](https://)", "link text")}
+                        title="Link ([text](url))"
+                        aria-label="Link"
+                      >
+                        <Link2 size={15} />
+                      </button>
                     </div>
 
                     <textarea
@@ -908,16 +1229,42 @@ export function NotesDashboard() {
                       placeholder="Write your note here using Markdown…"
                       value={draft.content}
                       onChange={(e) => setDraft({ ...draft, content: e.target.value })}
+                      onScroll={handleEditorScroll}
                       className="editor-textarea font-shabnam"
                       dir="auto"
                     />
                   </div>
 
-                  <div className="editor-preview-pane">
+                  <div
+                    className="editor-preview-pane"
+                    onMouseEnter={() => {
+                      if (scrollingSourceRef.current !== "preview") {
+                        scrollingSourceRef.current = null;
+                      }
+                    }}
+                  >
                     <div className="editor-preview-header">
                       <span>Preview</span>
+                      <button
+                        type="button"
+                        className={`editor-sync-btn ${syncScroll ? "editor-sync-btn--active" : ""}`}
+                        onClick={() => setSyncScroll((prev) => !prev)}
+                        title={
+                          syncScroll
+                            ? "Synchronized scrolling active (click to disable)"
+                            : "Synchronized scrolling disabled (click to enable)"
+                        }
+                        aria-pressed={syncScroll}
+                      >
+                        <ArrowUpDown size={13} aria-hidden="true" />
+                        <span>Sync scroll</span>
+                      </button>
                     </div>
-                    <div className="editor-preview-panel">
+                    <div
+                      ref={previewRef}
+                      onScroll={handlePreviewScroll}
+                      className="editor-preview-panel"
+                    >
                       <MarkdownRenderer
                         content={draft.content}
                         fontClass="font-shabnam"
@@ -969,7 +1316,8 @@ export function NotesDashboard() {
           <DialogHeader>
             <DialogTitle>Delete note?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &quot;{noteToDelete?.title}&quot;? This action cannot be undone.
+              Are you sure you want to delete &quot;{noteToDelete?.title}&quot;? This action cannot
+              be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

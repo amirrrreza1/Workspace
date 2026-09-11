@@ -4,14 +4,18 @@ import {
   Bell,
   CalendarDays,
   CircleAlert,
+  Download,
   Edit3,
   LoaderCircle,
   Mail,
   MessageCircle,
   Plus,
   Search,
+  Send,
   Settings,
+  SlidersHorizontal,
   Trash2,
+  Upload,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -76,6 +80,7 @@ type SettingsRecord = {
   defaultCurrency: Currency;
   emailEnabled: boolean;
   telegramEnabled: boolean;
+  backupTelegramChatId?: string | null;
   updatedAt: string;
   providers: { email: Provider; telegram: Provider };
   currencyConversion: Provider;
@@ -363,7 +368,11 @@ export function Dashboard() {
   const [sort, setSort] = useState("nextOccurrence");
   const [reminderModal, setReminderModal] = useState<Reminder | "new" | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const firstLoad = useRef(true);
+
+  const activeFiltersCount =
+    (type ? 1 : 0) + (state !== "active" ? 1 : 0) + (sort !== "nextOccurrence" ? 1 : 0);
 
   const load = useCallback(async () => {
     const params = new URLSearchParams();
@@ -482,6 +491,7 @@ export function Dashboard() {
           defaultCurrency: input.defaultCurrency,
           emailEnabled: input.emailEnabled,
           telegramEnabled: input.telegramEnabled,
+          backupTelegramChatId: input.backupTelegramChatId ?? null,
           expectedUpdatedAt: input.updatedAt,
         }),
       });
@@ -584,45 +594,62 @@ export function Dashboard() {
                 />
               </span>
             </label>
-            <label className="toolbar-field">
-              Type
-              <Select
-                aria-label="Type"
-                value={type || "all"}
-                onValueChange={(value) => setType(value === "all" ? "" : value)}
-                options={[
-                  { value: "all", label: "All types" },
-                  ...Object.entries(typeLabels).map(([value, label]) => ({ value, label })),
-                ]}
-              />
-            </label>
-            <label className="toolbar-field">
-              State
-              <Select
-                aria-label="State"
-                value={state}
-                onValueChange={setState}
-                options={[
-                  { value: "active", label: "Active" },
-                  { value: "paused", label: "Paused" },
-                  { value: "completed", label: "Completed" },
-                  { value: "all", label: "All states" },
-                ]}
-              />
-            </label>
-            <label className="toolbar-field">
-              Sort
-              <Select
-                aria-label="Sort"
-                value={sort}
-                onValueChange={setSort}
-                options={[
-                  { value: "nextOccurrence", label: "Next occurrence" },
-                  { value: "title", label: "Title" },
-                  { value: "amount", label: "Amount" },
-                ]}
-              />
-            </label>
+            <button
+              type="button"
+              className={`filter-toggle-btn ${activeFiltersCount > 0 ? "filter-toggle-btn--active" : ""} ${mobileFiltersOpen ? "filter-toggle-btn--open" : ""}`}
+              onClick={() => setMobileFiltersOpen((prev) => !prev)}
+              aria-label={mobileFiltersOpen ? "Hide filters" : "Show filters"}
+              aria-expanded={mobileFiltersOpen}
+            >
+              <SlidersHorizontal aria-hidden="true" size={16} />
+              <span>Filters</span>
+              {activeFiltersCount > 0 && (
+                <span className="filter-badge" aria-label={`${activeFiltersCount} active filters`}>
+                  {activeFiltersCount}
+                </span>
+              )}
+            </button>
+            <div className={`toolbar-filters-group ${mobileFiltersOpen ? "toolbar-filters-group--open" : ""}`}>
+              <label className="toolbar-field">
+                Type
+                <Select
+                  aria-label="Type"
+                  value={type || "all"}
+                  onValueChange={(value) => setType(value === "all" ? "" : value)}
+                  options={[
+                    { value: "all", label: "All types" },
+                    ...Object.entries(typeLabels).map(([value, label]) => ({ value, label })),
+                  ]}
+                />
+              </label>
+              <label className="toolbar-field">
+                State
+                <Select
+                  aria-label="State"
+                  value={state}
+                  onValueChange={setState}
+                  options={[
+                    { value: "active", label: "Active" },
+                    { value: "paused", label: "Paused" },
+                    { value: "completed", label: "Completed" },
+                    { value: "all", label: "All states" },
+                  ]}
+                />
+              </label>
+              <label className="toolbar-field">
+                Sort
+                <Select
+                  aria-label="Sort"
+                  value={sort}
+                  onValueChange={setSort}
+                  options={[
+                    { value: "nextOccurrence", label: "Next occurrence" },
+                    { value: "title", label: "Title" },
+                    { value: "amount", label: "Amount" },
+                  ]}
+                />
+              </label>
+            </div>
           </div>
         </section>
         {loading ? (
@@ -691,6 +718,7 @@ export function Dashboard() {
         }}
         onSave={saveSettings}
         onProviderTest={sendProviderTest}
+        onReload={load}
         mutationsBlocked={offline || mutationsBlocked}
       />
     </div>
@@ -1232,6 +1260,7 @@ function SettingsModal({
   onOpenChange,
   onSave,
   onProviderTest,
+  onReload,
   mutationsBlocked,
 }: {
   open: boolean;
@@ -1239,6 +1268,7 @@ function SettingsModal({
   onOpenChange: (open: boolean) => void;
   onSave: (settings: SettingsRecord) => Promise<void>;
   onProviderTest: (channel: "email" | "telegram") => Promise<string>;
+  onReload: () => Promise<void>;
   mutationsBlocked: boolean;
 }) {
   const { toast } = useToast();
@@ -1246,13 +1276,23 @@ function SettingsModal({
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState<"email" | "telegram" | null>(null);
   const [testToConfirm, setTestToConfirm] = useState<"email" | "telegram" | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [sendingTelegram, setSendingTelegram] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { theme, setTheme } = useTheme();
+
   useEffect(() => {
     if (open) {
       setDraft(settings);
       setTestToConfirm(null);
+      setSelectedFile(null);
+      setRestoreConfirmOpen(false);
     }
   }, [open, settings]);
+
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!draft) return;
@@ -1266,6 +1306,7 @@ function SettingsModal({
       setSaving(false);
     }
   };
+
   const sendTest = async () => {
     if (!testToConfirm) return;
     const channel = testToConfirm;
@@ -1281,6 +1322,114 @@ function SettingsModal({
       setTesting(null);
     }
   };
+
+  const downloadBackup = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch("/api/v1/backups");
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
+        throw new Error(data.error?.message || "Could not download backup file.");
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const disposition = res.headers.get("Content-Disposition");
+      let filename = "workspace-backup.json";
+      if (disposition && disposition.includes("filename=")) {
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        if (match?.[1]) filename = match[1];
+      }
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast("Backup downloaded successfully.", "success");
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "Failed to download backup.";
+      toast(message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const executeRestore = async () => {
+    if (!selectedFile) return;
+    setRestoring(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      const res = await fetch("/api/v1/backups/restore", {
+        method: "POST",
+        body: formData,
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: { message?: string };
+        restored?: {
+          remindersCount: number;
+          notesCount: number;
+          projectsCount: number;
+          secretsCount: number;
+        };
+      };
+      if (!res.ok) {
+        throw new Error(data.error?.message || "Could not restore backup file.");
+      }
+      toast(
+        `Backup restored: ${data.restored?.remindersCount ?? 0} reminders, ${data.restored?.notesCount ?? 0} notes, ${data.restored?.projectsCount ?? 0} projects.`,
+        "success",
+      );
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setRestoreConfirmOpen(false);
+      onOpenChange(false);
+      await onReload();
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "Failed to restore backup.";
+      toast(message);
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  const sendBackupToTelegram = async () => {
+    const chatId = draft?.backupTelegramChatId?.trim();
+    if (!chatId) {
+      toast("Please enter a Telegram channel username or chat ID.");
+      return;
+    }
+    setSendingTelegram(true);
+    try {
+      const res = await fetch("/api/v1/backups/telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatId }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        message?: string;
+        error?: { message?: string };
+      };
+      if (!res.ok) {
+        throw new Error(data.error?.message || "Could not send backup to Telegram channel.");
+      }
+      toast(data.message || `Backup sent to ${chatId}.`, "success");
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "Failed to send backup to Telegram.";
+      toast(message);
+    } finally {
+      setSendingTelegram(false);
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1398,6 +1547,116 @@ function SettingsModal({
                   </Button>
                 </div>
               </fieldset>
+
+              <fieldset className="field field--wide backup-fieldset">
+                <legend>Backups &amp; Data</legend>
+
+                <div className="backup-item">
+                  <div className="backup-item-text">
+                    <strong>Export backup file</strong>
+                    <p>Download a complete JSON backup of reminders, notes, and project secrets.</p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    onClick={downloadBackup}
+                    disabled={exporting || mutationsBlocked}
+                  >
+                    {exporting ? (
+                      <LoaderCircle className="spin" aria-hidden="true" size={16} />
+                    ) : (
+                      <Download aria-hidden="true" size={16} />
+                    )}
+                    Download backup
+                  </Button>
+                </div>
+
+                <div className="backup-item">
+                  <div className="backup-item-text">
+                    <strong>Restore from file</strong>
+                    <p>Upload a previously exported backup file to restore workspace data.</p>
+                    {selectedFile && (
+                      <span className="backup-file-selected">
+                        Selected: <strong>{selectedFile.name}</strong> (
+                        {(selectedFile.size / 1024).toFixed(1)} KB)
+                      </span>
+                    )}
+                  </div>
+                  <div className="backup-item-actions">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".json,application/json"
+                      style={{ display: "none" }}
+                      onChange={handleFileSelect}
+                    />
+                    <Button
+                      variant="secondary"
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={restoring || mutationsBlocked}
+                    >
+                      <Upload aria-hidden="true" size={16} />
+                      {selectedFile ? "Change file" : "Select file"}
+                    </Button>
+                    {selectedFile && (
+                      <Button
+                        variant="destructive"
+                        type="button"
+                        onClick={() => setRestoreConfirmOpen(true)}
+                        disabled={restoring || mutationsBlocked}
+                      >
+                        {restoring && (
+                          <LoaderCircle className="spin" aria-hidden="true" size={16} />
+                        )}
+                        Restore
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="backup-telegram-box">
+                  <div className="backup-item-text">
+                    <strong>Send to Telegram channel</strong>
+                    <p>Transmit the backup file directly to a separate Telegram channel or chat.</p>
+                  </div>
+                  <div className="backup-telegram-controls">
+                    <input
+                      type="text"
+                      className="backup-telegram-input"
+                      placeholder="e.g. @my_channel or -1001234567890"
+                      value={draft.backupTelegramChatId ?? ""}
+                      onChange={(e) =>
+                        setDraft({ ...draft, backupTelegramChatId: e.target.value })
+                      }
+                    />
+                    <Button
+                      variant="secondary"
+                      type="button"
+                      onClick={sendBackupToTelegram}
+                      disabled={
+                        sendingTelegram || mutationsBlocked || !draft.providers.telegram.available
+                      }
+                      title={
+                        !draft.providers.telegram.available
+                          ? "Telegram bot is not configured on the server"
+                          : "Send backup to this channel"
+                      }
+                    >
+                      {sendingTelegram ? (
+                        <LoaderCircle className="spin" aria-hidden="true" size={16} />
+                      ) : (
+                        <Send aria-hidden="true" size={16} />
+                      )}
+                      Send to channel
+                    </Button>
+                  </div>
+                  <small className="backup-hint">
+                    Note: The Telegram bot must be an administrator in the channel with permission to post messages.
+                  </small>
+                </div>
+              </fieldset>
+
               <DialogFooter>
                 <Button
                   variant="secondary"
@@ -1426,6 +1685,18 @@ function SettingsModal({
           if (!nextOpen) setTestToConfirm(null);
         }}
         onConfirm={() => void sendTest()}
+      />
+      <ConfirmationModal
+        open={restoreConfirmOpen}
+        title="Restore backup data?"
+        description={`Restoring "${selectedFile?.name ?? "this file"}" will replace all current reminders, notes, and project secrets with the data from this backup. This action cannot be undone.`}
+        confirmLabel="Restore now"
+        destructive
+        confirmDisabled={restoring}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setRestoreConfirmOpen(false);
+        }}
+        onConfirm={() => void executeRestore()}
       />
     </>
   );
