@@ -51,20 +51,12 @@ export const backupNoteSchema = z
     title: z.string().min(1).max(255),
     content: z.string().default(""),
     tags: z.array(z.string()).default([]),
-    links: z
-      .array(
-        z.object({
-          title: z.string(),
-          url: z.string(),
-        }),
-      )
-      .default([]),
     isPinned: z.boolean().default(false),
     isArchived: z.boolean().default(false),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
   })
-  .strict();
+  .passthrough();
 
 export const backupSecretSchema = z
   .object({

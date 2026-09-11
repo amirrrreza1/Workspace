@@ -5,15 +5,11 @@ import {
   ArchiveRestore,
   ArrowUpDown,
   Bold,
-  Check,
   CheckSquare,
   CircleAlert,
   Code,
-  Copy,
   Edit3,
-  ExternalLink,
   FileText,
-  Globe,
   Heading1,
   Heading2,
   Heading3,
@@ -46,7 +42,7 @@ import {
   Select,
   Switch,
 } from "@reminder/ui";
-import type { Note, NoteLink, NotesSummary } from "@reminder/domain";
+import type { Note, NotesSummary } from "@reminder/domain";
 import { MarkdownRenderer } from "./markdown-renderer";
 
 type FilterState = {
@@ -60,7 +56,6 @@ type NoteDraft = {
   title: string;
   content: string;
   tags: string[];
-  links: NoteLink[];
   isPinned: boolean;
   isArchived: boolean;
 };
@@ -69,18 +64,9 @@ const initialDraft: NoteDraft = {
   title: "",
   content: "",
   tags: [],
-  links: [],
   isPinned: false,
   isArchived: false,
 };
-
-function getLinkHostname(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return url;
-  }
-}
 
 export function NotesDashboard() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -106,9 +92,6 @@ export function NotesDashboard() {
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [draft, setDraft] = useState<NoteDraft>(initialDraft);
   const [newTagInput, setNewTagInput] = useState("");
-  const [newLinkUrl, setNewLinkUrl] = useState("");
-  const [newLinkTitle, setNewLinkTitle] = useState("");
-  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
 
@@ -163,8 +146,6 @@ export function NotesDashboard() {
     setEditingNote(null);
     setDraft(initialDraft);
     setNewTagInput("");
-    setNewLinkUrl("");
-    setNewLinkTitle("");
     setModalOpen(true);
   };
 
@@ -175,13 +156,10 @@ export function NotesDashboard() {
       title: note.title,
       content: note.content,
       tags: [...note.tags],
-      links: [...(note.links || [])],
       isPinned: note.isPinned,
       isArchived: note.isArchived,
     });
     setNewTagInput("");
-    setNewLinkUrl("");
-    setNewLinkTitle("");
     setModalOpen(true);
   };
 
@@ -198,7 +176,6 @@ export function NotesDashboard() {
             title: draft.title.trim(),
             content: draft.content,
             tags: draft.tags,
-            links: draft.links,
             isPinned: draft.isPinned,
             isArchived: draft.isArchived,
             expectedUpdatedAt: editingNote.updatedAt,
@@ -212,7 +189,6 @@ export function NotesDashboard() {
                 title: draft.title.trim(),
                 content: draft.content,
                 tags: draft.tags,
-                links: draft.links,
                 isPinned: draft.isPinned,
                 isArchived: draft.isArchived,
                 updatedAt: new Date().toISOString(),
@@ -227,7 +203,6 @@ export function NotesDashboard() {
             title: draft.title.trim(),
             content: draft.content,
             tags: draft.tags,
-            links: draft.links,
             isPinned: draft.isPinned,
           }),
         });
@@ -307,42 +282,6 @@ export function NotesDashboard() {
 
   const removeTag = (tagToRemove: string) => {
     setDraft({ ...draft, tags: draft.tags.filter((t) => t !== tagToRemove) });
-  };
-
-  const addLink = () => {
-    const rawUrl = newLinkUrl.trim();
-    if (!rawUrl) return;
-
-    const normalizedUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
-    const title = newLinkTitle.trim();
-
-    if (draft.links.some((l) => l.url.toLowerCase() === normalizedUrl.toLowerCase())) {
-      return;
-    }
-
-    setDraft({
-      ...draft,
-      links: [...draft.links, { url: normalizedUrl, title }],
-    });
-    setNewLinkUrl("");
-    setNewLinkTitle("");
-  };
-
-  const removeLink = (indexToRemove: number) => {
-    setDraft({
-      ...draft,
-      links: draft.links.filter((_, idx) => idx !== indexToRemove),
-    });
-  };
-
-  const copyToClipboard = async (url: string, key: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopiedLinkId(key);
-      setTimeout(() => setCopiedLinkId(null), 2000);
-    } catch {
-      // ignore clipboard error
-    }
   };
 
   // Interactive task toggle on card / detail
@@ -706,28 +645,6 @@ export function NotesDashboard() {
                   </div>
                 )}
 
-                {note.links && note.links.length > 0 && (
-                  <div className="note-card-links">
-                    {note.links.map((link, lIdx) => {
-                      const hostname = getLinkHostname(link.url);
-                      return (
-                        <a
-                          key={lIdx}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="note-card-link-chip"
-                          onClick={(e) => e.stopPropagation()}
-                          title={link.title ? `${link.title} (${link.url})` : link.url}
-                        >
-                          <ExternalLink size={11} aria-hidden="true" />
-                          <span>{link.title || hostname}</span>
-                        </a>
-                      );
-                    })}
-                  </div>
-                )}
-
                 <div className="note-card-footer">
                   <span className="note-timestamp">
                     Updated {new Date(note.updatedAt).toLocaleDateString()}
@@ -816,56 +733,6 @@ export function NotesDashboard() {
                         <span>{tag}</span>
                       </button>
                     ))}
-                  </div>
-                </div>
-              )}
-
-              {viewingNote.links && viewingNote.links.length > 0 && (
-                <div className="note-detail-links-section">
-                  <div className="note-detail-links-header">
-                    <Link2 size={15} aria-hidden="true" />
-                    <span>Links ({viewingNote.links.length})</span>
-                  </div>
-                  <div className="note-detail-links-grid">
-                    {viewingNote.links.map((link, lIdx) => {
-                      const hostname = getLinkHostname(link.url);
-                      const isCopied = copiedLinkId === `view-${lIdx}`;
-                      return (
-                        <div key={lIdx} className="note-detail-link-card">
-                          <div className="note-detail-link-content">
-                            <Globe size={15} className="note-detail-link-icon" aria-hidden="true" />
-                            <div className="note-detail-link-texts">
-                              <a
-                                href={link.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="note-detail-link-title"
-                                title={link.url}
-                              >
-                                <span>{link.title || hostname}</span>
-                                <ExternalLink size={12} aria-hidden="true" />
-                              </a>
-                              <span className="note-detail-link-url" title={link.url}>
-                                {link.url}
-                              </span>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            className="icon-button note-detail-link-copy-btn"
-                            onClick={() => copyToClipboard(link.url, `view-${lIdx}`)}
-                            title={isCopied ? "Copied!" : "Copy link URL"}
-                            aria-label={isCopied ? "Copied!" : "Copy link URL"}
-                          >
-                            {isCopied ? (
-                              <Check size={14} className="text-success" />
-                            ) : (
-                              <Copy size={14} />
-                            )}
-                          </button>
-                        </div>
-                      );
-                    })}
                   </div>
                 </div>
               )}
@@ -986,98 +853,6 @@ export function NotesDashboard() {
                       disabled={!newTagInput.trim()}
                     >
                       Add
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Links Section */}
-              <div className="field field--wide">
-                <div className="links-section-header">
-                  <span className="links-section-title">
-                    <Link2 size={15} aria-hidden="true" />
-                    Links
-                  </span>
-                  <span className="field-hint">({draft.links.length}/50)</span>
-                </div>
-
-                <div className="links-input-container">
-                  {draft.links.length > 0 && (
-                    <div className="links-items-list">
-                      {draft.links.map((link, idx) => {
-                        const hostname = getLinkHostname(link.url);
-                        return (
-                          <div key={idx} className="link-item-row">
-                            <Globe size={15} className="link-item-icon" aria-hidden="true" />
-                            <div className="link-item-details">
-                              <a
-                                href={link.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="link-item-title-anchor"
-                                title="Open in new tab"
-                              >
-                                <span className="link-item-title">{link.title || hostname}</span>
-                                <ExternalLink size={12} aria-hidden="true" />
-                              </a>
-                              <span className="link-item-url" title={link.url}>
-                                {link.url}
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              className="icon-button link-item-remove-btn"
-                              onClick={() => removeLink(idx)}
-                              title="Remove link"
-                              aria-label={`Remove link ${link.title || link.url}`}
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  <div className="link-add-row">
-                    <div className="link-add-inputs">
-                      <input
-                        type="text"
-                        placeholder="https://example.com or example.com"
-                        value={newLinkUrl}
-                        onChange={(e) => setNewLinkUrl(e.target.value)}
-                        className="link-input-url"
-                        dir="ltr"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            addLink();
-                          }
-                        }}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Link title or label (optional)"
-                        value={newLinkTitle}
-                        onChange={(e) => setNewLinkTitle(e.target.value)}
-                        className="link-input-title"
-                        dir="auto"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            addLink();
-                          }
-                        }}
-                      />
-                    </div>
-                    <Button
-                      variant="secondary"
-                      type="button"
-                      onClick={addLink}
-                      disabled={!newLinkUrl.trim()}
-                    >
-                      <Plus size={16} />
-                      Add link
                     </Button>
                   </div>
                 </div>

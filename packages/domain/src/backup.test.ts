@@ -45,7 +45,6 @@ describe("workspaceBackupSchema", () => {
           title: "Project Ideas",
           content: "Markdown content here",
           tags: ["ideas", "work"],
-          links: [{ title: "GitHub", url: "https://github.com" }],
           isPinned: true,
           isArchived: false,
         },

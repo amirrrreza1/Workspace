@@ -38,32 +38,5 @@ describe("notes domain", () => {
     expect(filter.isArchived).toBe(false);
     expect(filter.sort).toBe("title_asc");
   });
-
-  it("validates links in create and update note inputs", () => {
-    const parsedCreate = createNoteSchema.parse({
-      title: "Note with links",
-      links: [
-        { url: "https://example.com", title: "Example" },
-        { url: "https://github.com" },
-      ],
-    });
-    expect(parsedCreate.links).toEqual([
-      { url: "https://example.com", title: "Example" },
-      { url: "https://github.com", title: "" },
-    ]);
-
-    const parsedUpdate = updateNoteSchema.parse({
-      links: [{ url: "https://docs.google.com", title: "Docs" }],
-    });
-    expect(parsedUpdate.links).toEqual([
-      { url: "https://docs.google.com", title: "Docs" },
-    ]);
-
-    expect(() =>
-      createNoteSchema.parse({
-        title: "Invalid link note",
-        links: [{ url: "   " }],
-      }),
-    ).toThrow();
-  });
 });
+

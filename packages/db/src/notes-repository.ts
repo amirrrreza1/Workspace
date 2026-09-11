@@ -1,4 +1,4 @@
-import type { CreateNoteInput, Note, NoteFilter, NoteLink, NotesSummary, UpdateNoteInput } from "@reminder/domain";
+import type { CreateNoteInput, Note, NoteFilter, NotesSummary, UpdateNoteInput } from "@reminder/domain";
 import type { Sql } from "postgres";
 
 import { NotFoundError, StaleWriteError } from "./errors.js";
@@ -9,7 +9,6 @@ type NoteRow = {
   title: string;
   content: string;
   tags: string[] | string;
-  links?: NoteLink[] | string | null;
   is_pinned: boolean;
   is_archived: boolean;
   created_at: Date;
@@ -29,26 +28,12 @@ function parseTags(tags: string[] | string): string[] {
   return [];
 }
 
-function parseLinks(links: NoteLink[] | string | undefined | null): NoteLink[] {
-  if (Array.isArray(links)) return links;
-  if (typeof links === "string") {
-    try {
-      const parsed = JSON.parse(links);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
-
 function rowToNote(row: NoteRow): Note {
   return {
     id: row.id,
     title: row.title,
     content: row.content,
     tags: parseTags(row.tags),
-    links: parseLinks(row.links),
     isPinned: row.is_pinned,
     isArchived: row.is_archived,
     createdAt: row.created_at.toISOString(),
@@ -71,7 +56,7 @@ export class NotesRepository {
   async list(filter: NoteFilter = { sort: "updated_desc" }): Promise<Note[]> {
     return this.withSql(async (sql) => {
       const rows = await sql<NoteRow[]>`
-        select id, title, content, tags, links, is_pinned, is_archived, created_at, updated_at
+        select id, title, content, tags, is_pinned, is_archived, created_at, updated_at
         from notes
         where (
           ${filter.isArchived === undefined ? sql`true` : sql`is_archived = ${filter.isArchived}`}
@@ -93,12 +78,7 @@ export class NotesRepository {
           (note) =>
             note.title.toLowerCase().includes(query) ||
             note.content.toLowerCase().includes(query) ||
-            note.tags.some((t) => t.toLowerCase().includes(query)) ||
-            note.links.some(
-              (l) =>
-                (l.title && l.title.toLowerCase().includes(query)) ||
-                l.url.toLowerCase().includes(query),
-            ),
+            note.tags.some((t) => t.toLowerCase().includes(query)),
         );
       }
 
@@ -114,7 +94,7 @@ export class NotesRepository {
   async getById(id: string): Promise<Note | null> {
     return this.withSql(async (sql) => {
       const rows = await sql<NoteRow[]>`
-        select id, title, content, tags, links, is_pinned, is_archived, created_at, updated_at
+        select id, title, content, tags, is_pinned, is_archived, created_at, updated_at
         from notes
         where id = ${id}
         limit 1
@@ -127,16 +107,15 @@ export class NotesRepository {
   async create(data: CreateNoteInput): Promise<Note> {
     return this.withSql(async (sql) => {
       const rows = await sql<NoteRow[]>`
-        insert into notes (title, content, tags, links, is_pinned, is_archived)
+        insert into notes (title, content, tags, is_pinned, is_archived)
         values (
           ${data.title},
           ${data.content},
           ${sql.json(data.tags)},
-          ${sql.json(data.links ?? [])},
           ${data.isPinned},
           false
         )
-        returning id, title, content, tags, links, is_pinned, is_archived, created_at, updated_at
+        returning id, title, content, tags, is_pinned, is_archived, created_at, updated_at
       `;
       const row = rows[0];
       if (!row) throw new Error("Could not insert note.");
@@ -147,7 +126,7 @@ export class NotesRepository {
   async update(id: string, data: UpdateNoteInput): Promise<Note> {
     return this.withSql(async (sql) => {
       const existingRows = await sql<NoteRow[]>`
-        select id, title, content, tags, links, is_pinned, is_archived, created_at, updated_at
+        select id, title, content, tags, is_pinned, is_archived, created_at, updated_at
         from notes
         where id = ${id}
         limit 1
@@ -165,12 +144,11 @@ export class NotesRepository {
           title = ${data.title !== undefined ? data.title : existing.title},
           content = ${data.content !== undefined ? data.content : existing.content},
           tags = ${data.tags !== undefined ? sql.json(data.tags) : sql.json(parseTags(existing.tags))},
-          links = ${data.links !== undefined ? sql.json(data.links) : sql.json(parseLinks(existing.links))},
           is_pinned = ${data.isPinned !== undefined ? data.isPinned : existing.is_pinned},
           is_archived = ${data.isArchived !== undefined ? data.isArchived : existing.is_archived},
           updated_at = now()
         where id = ${id}
-        returning id, title, content, tags, links, is_pinned, is_archived, created_at, updated_at
+        returning id, title, content, tags, is_pinned, is_archived, created_at, updated_at
       `;
       const updated = rows[0];
       if (!updated) throw new NotFoundError("Note not found.");

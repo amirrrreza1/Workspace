@@ -1,4 +1,3 @@
-import type { NoteLink } from "@reminder/domain";
 import { sql } from "drizzle-orm";
 import {
   bigint,
@@ -160,7 +159,6 @@ export const notes = pgTable(
     title: varchar("title", { length: 255 }).notNull(),
     content: text("content").notNull().default(""),
     tags: jsonb("tags").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
-    links: jsonb("links").$type<NoteLink[]>().notNull().default(sql`'[]'::jsonb`),
     isPinned: boolean("is_pinned").notNull().default(false),
     isArchived: boolean("is_archived").notNull().default(false),
     createdAt,

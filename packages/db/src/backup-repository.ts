@@ -38,7 +38,6 @@ type RawNoteRow = {
   title: string;
   content: string;
   tags: string[] | string;
-  links: { title: string; url: string }[] | string | null;
   is_pinned: boolean;
   is_archived: boolean;
   created_at: Date;
@@ -139,7 +138,7 @@ export class BackupRepository {
 
       // 3. Notes
       const noteRows = await sql<RawNoteRow[]>`
-        select id, title, content, tags, links, is_pinned, is_archived, created_at, updated_at
+        select id, title, content, tags, is_pinned, is_archived, created_at, updated_at
         from notes
         order by is_pinned desc, updated_at desc, id desc
       `;
@@ -218,7 +217,6 @@ export class BackupRepository {
             title: n.title,
             content: n.content,
             tags: parseJsonArray<string>(n.tags),
-            links: parseJsonArray<{ title: string; url: string }>(n.links),
             isPinned: n.is_pinned,
             isArchived: n.is_archived,
             createdAt: iso(n.created_at),
@@ -331,10 +329,10 @@ export class BackupRepository {
 
           await tx`
             insert into notes (
-              id, title, content, tags, links, is_pinned, is_archived, created_at, updated_at
+              id, title, content, tags, is_pinned, is_archived, created_at, updated_at
             ) values (
               ${noteId}, ${note.title}, ${note.content}, ${tx.json(note.tags)},
-              ${tx.json(note.links)}, ${note.isPinned}, ${note.isArchived},
+              ${note.isPinned}, ${note.isArchived},
               ${nCreated}, ${nUpdated}
             )
           `;
