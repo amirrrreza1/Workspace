@@ -12,6 +12,7 @@ export * from "./crypto.js";
 export * from "./notes-repository.js";
 export * from "./secrets-repository.js";
 export * from "./backup-repository.js";
+export * from "./backup-deliveries.js";
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const migrationsDir = path.join(packageRoot, "migrations");

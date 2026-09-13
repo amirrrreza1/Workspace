@@ -26,7 +26,29 @@ describe("loadConfig", () => {
     expect(config.APP_TIMEZONE).toBe("Asia/Tehran");
     expect(config.smtpConfigured).toBe(false);
     expect(config.telegramConfigured).toBe(false);
+    expect(config.telegramBackupConfigured).toBe(false);
     expect(config.nerkhConfigured).toBe(false);
+  });
+
+  it("enables nightly Telegram backups only with a separate bot and destination", () => {
+    const incomplete = loadConfig({
+      ...baseEnv,
+      TELEGRAM_BACKUP_BOT_TOKEN: "backup-bot-token",
+    });
+    expect(incomplete.telegramBackupConfigured).toBe(false);
+
+    const configured = loadConfig({
+      ...baseEnv,
+      TELEGRAM_BACKUP_BOT_TOKEN: "backup-bot-token",
+      TELEGRAM_BACKUP_CHAT_ID: "@workspace_backups",
+      BACKUP_SEND_TIME: "01:30",
+    });
+    expect(configured.telegramBackupConfigured).toBe(true);
+    expect(configured.BACKUP_SEND_TIME).toBe("01:30");
+  });
+
+  it("rejects an invalid nightly backup time", () => {
+    expect(() => loadConfig({ ...baseEnv, BACKUP_SEND_TIME: "25:00" })).toThrow(/BACKUP_SEND_TIME/);
   });
 
   it("marks Nerkh conversion available when a token is set", () => {

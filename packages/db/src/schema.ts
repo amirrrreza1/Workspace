@@ -152,13 +152,48 @@ export const notificationDeliveries = pgTable(
   ],
 );
 
+export type NightlyBackupDeliveryStatus = "pending" | "processing" | "retry" | "sent" | "failed";
+
+export const nightlyBackupDeliveries = pgTable(
+  "nightly_backup_deliveries",
+  {
+    backupDate: date("backup_date").primaryKey(),
+    scheduledFor: timestamp("scheduled_for", { withTimezone: true, mode: "date" }).notNull(),
+    status: varchar("status", { length: 20 })
+      .$type<NightlyBackupDeliveryStatus>()
+      .notNull()
+      .default("pending"),
+    attemptCount: smallint("attempt_count").notNull().default(0),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true, mode: "date" }),
+    leaseOwner: varchar("lease_owner", { length: 100 }),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true, mode: "date" }),
+    providerMessageId: varchar("provider_message_id", { length: 255 }),
+    lastErrorCode: varchar("last_error_code", { length: 80 }),
+    lastErrorDetail: varchar("last_error_detail", { length: 500 }),
+    sentAt: timestamp("sent_at", { withTimezone: true, mode: "date" }),
+    createdAt,
+    updatedAt,
+  },
+  (table) => [
+    index("nightly_backup_deliveries_claim")
+      .on(table.nextAttemptAt, table.backupDate)
+      .where(sql`${table.status} in ('pending', 'retry')`),
+    index("nightly_backup_deliveries_lease_recovery")
+      .on(table.leaseExpiresAt, table.backupDate)
+      .where(sql`${table.status} = 'processing'`),
+  ],
+);
+
 export const notes = pgTable(
   "notes",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     title: varchar("title", { length: 255 }).notNull(),
     content: text("content").notNull().default(""),
-    tags: jsonb("tags").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    tags: jsonb("tags")
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     isPinned: boolean("is_pinned").notNull().default(false),
     isArchived: boolean("is_archived").notNull().default(false),
     createdAt,
@@ -189,9 +224,7 @@ export const projectEnvironments = pgTable(
     createdAt,
     updatedAt,
   },
-  (table) => [
-    uniqueIndex("project_environments_project_name").on(table.projectId, table.name),
-  ],
+  (table) => [uniqueIndex("project_environments_project_name").on(table.projectId, table.name)],
 );
 
 export const projectSecrets = pgTable(
@@ -218,4 +251,3 @@ export const projectSecrets = pgTable(
     index("project_secrets_project_env").on(table.projectId, table.environmentId),
   ],
 );
-

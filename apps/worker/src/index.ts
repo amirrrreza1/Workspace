@@ -3,12 +3,20 @@ import "./load-root-env.js";
 import { hostname } from "node:os";
 
 import { getConfig } from "@reminder/config";
-import { createSql, NotificationRepository, type ClaimedDelivery } from "@reminder/db";
+import {
+  BackupRepository,
+  createSql,
+  NightlyBackupRepository,
+  NotificationRepository,
+  type ClaimedDelivery,
+  type ClaimedNightlyBackup,
+} from "@reminder/db";
 import { formatMoney } from "@reminder/domain";
 import {
   isProviderError,
   NotificationProviderError,
   retryDelayMs,
+  sendTelegramDocument,
   SmtpNotificationProvider,
   TelegramNotificationProvider,
   type NotificationMessage,
@@ -135,6 +143,11 @@ async function main(): Promise<void> {
     missedGraceHours: config.NOTIFICATION_MISSED_GRACE_HOURS,
     availability: { email: config.smtpConfigured, telegram: config.telegramConfigured },
   });
+  const backupRepository = new BackupRepository(config.DATABASE_URL);
+  const backupQueue = new NightlyBackupRepository(config.DATABASE_URL, {
+    timeZone: config.APP_TIMEZONE,
+    sendTime: config.BACKUP_SEND_TIME,
+  });
 
   let shuttingDown = false;
   let running: Promise<void> | undefined;
@@ -196,16 +209,76 @@ async function main(): Promise<void> {
     }
   };
 
+  const processNightlyBackup = async (delivery: ClaimedNightlyBackup): Promise<void> => {
+    try {
+      const backup = await backupRepository.exportBackup();
+      const timestamp = new Date()
+        .toISOString()
+        .replace(/[:.]/g, "-")
+        .replace("T", "_")
+        .slice(0, 19);
+      const receipt = await sendTelegramDocument({
+        botToken: config.TELEGRAM_BACKUP_BOT_TOKEN.trim(),
+        chatId: config.TELEGRAM_BACKUP_CHAT_ID.trim(),
+        filename: `workspace-backup-${timestamp}.json`,
+        content: JSON.stringify(backup, null, 2),
+        contentType: "application/json",
+        caption: [
+          "<b>📦 Nightly Workspace Backup</b>",
+          `📅 <i>${delivery.backupDate}</i>`,
+          "",
+          `🔔 <b>Reminders:</b> ${backup.data.reminders.length}`,
+          `📝 <b>Notes:</b> ${backup.data.notes.length}`,
+          `🔑 <b>Projects:</b> ${backup.data.projects.length}`,
+        ].join("\n"),
+      });
+      await backupQueue.markSent(delivery.backupDate, WORKER_ID, receipt);
+      log("backup.sent", { backupDate: delivery.backupDate });
+    } catch (error) {
+      const failure = providerFailure(error);
+      const canRetry =
+        failure.retryable && delivery.attemptCount < config.NOTIFICATION_MAX_ATTEMPTS;
+      await backupQueue.markFailure({
+        backupDate: delivery.backupDate,
+        workerId: WORKER_ID,
+        retry: canRetry,
+        ...(canRetry
+          ? {
+              nextAttemptAt: new Date(
+                Date.now() + retryDelayMs(delivery.attemptCount, Math.random, failure.retryAfterMs),
+              ),
+            }
+          : {}),
+        code: failure.code,
+        detail: failure.message,
+      });
+      logError(canRetry ? "backup.retry_scheduled" : "backup.failed", {
+        backupDate: delivery.backupDate,
+        code: failure.code,
+      });
+    }
+  };
+
   const tick = async (): Promise<void> => {
     if (shuttingDown) return;
     const schedule = await queue.schedule();
     const claimed = await queue.claim(WORKER_ID);
     await mapConcurrent(claimed, SEND_CONCURRENCY, processDelivery);
+    let backupScheduled = false;
+    let backupClaimed = false;
+    if (config.telegramBackupConfigured) {
+      backupScheduled = await backupQueue.schedule();
+      const backupDelivery = await backupQueue.claim(WORKER_ID);
+      backupClaimed = backupDelivery !== null;
+      if (backupDelivery) await processNightlyBackup(backupDelivery);
+    }
     await writeHeartbeat(config.DATABASE_URL);
     log("worker.heartbeat", {
       scheduled: schedule.scheduled,
       advanced: schedule.advanced,
       claimed: claimed.length,
+      backupScheduled,
+      backupClaimed,
     });
   };
 
@@ -233,7 +306,11 @@ async function main(): Promise<void> {
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
   process.on("SIGINT", () => void shutdown("SIGINT"));
 
-  log("app.started", { pollIntervalSeconds: config.NOTIFICATION_POLL_INTERVAL_SECONDS });
+  log("app.started", {
+    pollIntervalSeconds: config.NOTIFICATION_POLL_INTERVAL_SECONDS,
+    nightlyBackupConfigured: config.telegramBackupConfigured,
+    backupSendTime: config.BACKUP_SEND_TIME,
+  });
   startTick();
   const timer = setInterval(startTick, config.NOTIFICATION_POLL_INTERVAL_SECONDS * 1000);
 }

@@ -113,24 +113,36 @@ Production SMTP must require encrypted transport and enforce certificate validat
 
 Create the bot through Telegram’s official [BotFather flow](https://core.telegram.org/bots/tutorial). A user must contact the bot first before it can send a private message. Treat the bot token like a password; never place it in screenshots, URLs shared with others, issues, or browser history.
 
+### Nightly Telegram backups
+
+Nightly backups intentionally use a different bot from reminder notifications. Setting both backup credentials enables one JSON workspace backup per local calendar day. The durable worker ledger prevents ordinary restarts or multiple workers from scheduling the same date twice and retries transient failures according to `NOTIFICATION_MAX_ATTEMPTS`.
+
+| Variable                    | Required for nightly backups | Notes                                            |
+| --------------------------- | ---------------------------- | ------------------------------------------------ |
+| `TELEGRAM_BACKUP_BOT_TOKEN` | Yes                          | Token for the dedicated backup bot               |
+| `TELEGRAM_BACKUP_CHAT_ID`   | Yes                          | Numeric group/chat ID or public channel username |
+| `BACKUP_SEND_TIME`          | No                           | `HH:mm` in `APP_TIMEZONE`; defaults to `02:00`   |
+
+Add the dedicated bot to the destination group, or make it an administrator of a channel with permission to post messages. Restart both `web` and `worker` after changing these values. The dashboard’s manual “Send backup” action uses this dedicated bot as well.
+
 ### Currency conversion (Nerkh)
 
 Dashboard amounts can be shown in a single currency. Conversion uses the Nerkh USD price endpoint and is display-only; stored reminder amounts are not rewritten.
 
-| Variable          | Required for conversion | Notes                                                                                          |
-| ----------------- | ----------------------- | ---------------------------------------------------------------------------------------------- |
-| `NERKH_API_TOKEN` | Yes                     | Issued at [nerkh.io](https://nerkh.io/). Sent as `Authorization: Bearer` to `api.nerkh.io`     |
+| Variable          | Required for conversion | Notes                                                                                      |
+| ----------------- | ----------------------- | ------------------------------------------------------------------------------------------ |
+| `NERKH_API_TOKEN` | Yes                     | Issued at [nerkh.io](https://nerkh.io/). Sent as `Authorization: Bearer` to `api.nerkh.io` |
 
 When the token is empty, Settings currency is locked to `DEFAULT_CURRENCY` and the user cannot change it. Get a token from [https://nerkh.io/](https://nerkh.io/).
 
 ### Initial defaults
 
-| Variable                   | Values                | Behavior                                    |
-| -------------------------- | --------------------- | ------------------------------------------- |
-| `DEFAULT_CALENDAR_SYSTEM`  | `gregorian`, `jalali` | Seeds a new settings row                    |
+| Variable                   | Values                | Behavior                                                                        |
+| -------------------------- | --------------------- | ------------------------------------------------------------------------------- |
+| `DEFAULT_CALENDAR_SYSTEM`  | `gregorian`, `jalali` | Seeds a new settings row                                                        |
 | `DEFAULT_CURRENCY`         | `IRR`, `USD`          | Seeds a new settings row; also the locked currency when Nerkh is not configured |
-| `DEFAULT_EMAIL_ENABLED`    | boolean               | Can seed true only if SMTP is available     |
-| `DEFAULT_TELEGRAM_ENABLED` | boolean               | Can seed true only if Telegram is available |
+| `DEFAULT_EMAIL_ENABLED`    | boolean               | Can seed true only if SMTP is available                                         |
+| `DEFAULT_TELEGRAM_ENABLED` | boolean               | Can seed true only if Telegram is available                                     |
 
 These values are used only when the settings table is empty. Restarting never overwrites UI settings.
 
@@ -227,6 +239,10 @@ Expected healthy state:
 Debug logs may include more timing and internal IDs but must not disable redaction. Do not globally log provider request/response bodies.
 
 ## 9. Backup
+
+When `TELEGRAM_BACKUP_BOT_TOKEN` and `TELEGRAM_BACKUP_CHAT_ID` are configured, the long-running worker automatically exports and sends the application’s JSON workspace backup every night at `BACKUP_SEND_TIME`. Delivery state is stored in `nightly_backup_deliveries`; a successful date is not sent again after a restart. As with notification delivery, a provider acceptance immediately followed by a worker crash can rarely cause an at-least-once duplicate during lease recovery.
+
+The Telegram JSON export complements, but does not replace, a full PostgreSQL disaster-recovery backup. It contains the workspace data needed by the dashboard restore flow, including encrypted secret records, and must be protected as sensitive data.
 
 The release Compose file should provide an opt-in `backup` service that:
 

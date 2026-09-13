@@ -4,9 +4,7 @@ const booleanFromEnv = z
   .union([z.boolean(), z.enum(["true", "false", "1", "0"])])
   .transform((value) => value === true || value === "true" || value === "1");
 
-const sendTimeSchema = z
-  .string()
-  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "NOTIFICATION_SEND_TIME must be HH:mm");
+const sendTimeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "must be HH:mm");
 
 /** Refused outright, so a copied template can never become the live password. */
 const PLACEHOLDER_PASSWORDS = new Set([
@@ -46,7 +44,9 @@ const envSchema = z.object({
   EMAIL_TO: z.string().optional().default(""),
   TELEGRAM_BOT_TOKEN: z.string().optional().default(""),
   TELEGRAM_CHAT_ID: z.string().optional().default(""),
+  TELEGRAM_BACKUP_BOT_TOKEN: z.string().optional().default(""),
   TELEGRAM_BACKUP_CHAT_ID: z.string().optional().default(""),
+  BACKUP_SEND_TIME: sendTimeSchema.default("02:00"),
   // Optional. Live USD/IRR dashboard conversion. Empty keeps currency locked
   // to DEFAULT_CURRENCY. Get a token at https://nerkh.io/
   NERKH_API_TOKEN: z.string().optional().default(""),
@@ -59,6 +59,7 @@ const envSchema = z.object({
 export type AppConfig = z.infer<typeof envSchema> & {
   smtpConfigured: boolean;
   telegramConfigured: boolean;
+  telegramBackupConfigured: boolean;
   nerkhConfigured: boolean;
 };
 
@@ -93,6 +94,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
 
   const smtpConfigured = isSmtpConfigured(parsed.data);
   const telegramConfigured = isTelegramConfigured(parsed.data);
+  const telegramBackupConfigured = Boolean(
+    parsed.data.TELEGRAM_BACKUP_BOT_TOKEN.trim() && parsed.data.TELEGRAM_BACKUP_CHAT_ID.trim(),
+  );
   const nerkhConfigured = Boolean(parsed.data.NERKH_API_TOKEN.trim());
 
   return {
@@ -101,6 +105,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     DEFAULT_TELEGRAM_ENABLED: parsed.data.DEFAULT_TELEGRAM_ENABLED && telegramConfigured,
     smtpConfigured,
     telegramConfigured,
+    telegramBackupConfigured,
     nerkhConfigured,
   };
 }

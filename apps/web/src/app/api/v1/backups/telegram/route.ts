@@ -8,14 +8,16 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const config = getConfig();
+    const backupBotToken = config.TELEGRAM_BACKUP_BOT_TOKEN.trim();
 
-    if (!config.TELEGRAM_BOT_TOKEN) {
+    if (!backupBotToken) {
       return noStore(
         Response.json(
           {
             error: {
               code: "TELEGRAM_NOT_CONFIGURED",
-              message: "Telegram bot token is not configured on the server (TELEGRAM_BOT_TOKEN).",
+              message:
+                "The backup Telegram bot token is not configured (TELEGRAM_BACKUP_BOT_TOKEN).",
               meta: null,
             },
           },
@@ -73,7 +75,7 @@ export async function POST(request: Request) {
     ].join("\n");
 
     const receipt = await sendTelegramDocument({
-      botToken: config.TELEGRAM_BOT_TOKEN,
+      botToken: backupBotToken,
       chatId: targetChatId,
       filename,
       content: jsonString,
