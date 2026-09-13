@@ -5,7 +5,8 @@ import { BASE_URL, seedSession } from "./auth-helpers";
 const note = {
   id: "f64b6750-c4a8-4f64-b269-5443a7ce9500",
   title: "API example",
-  content: "```typescript\nconst total = 6 * 7;\nconsole.log(total);\n```",
+  content:
+    "```typescript\nconst total = 6 * 7;\nconsole.log(total);\n```\n\n- [ ] Buy milk\n- [x] Ship update",
   tags: ["code"],
   isPinned: false,
   isArchived: false,
@@ -85,4 +86,26 @@ test("keeps notes readable and touch-friendly on mobile", async ({ page }) => {
     "font-size",
     "16px",
   );
+});
+
+test("renders compact checklist controls in the note editor preview", async ({ page }) => {
+  await page.locator(".note-card", { hasText: note.title }).click();
+  await page
+    .getByRole("dialog", { name: note.title })
+    .getByRole("button", { name: "Edit note" })
+    .click();
+
+  const editor = page.getByRole("dialog", { name: "Edit note" });
+  const preview = editor.locator(".editor-preview-panel");
+  const checkboxes = preview.getByRole("checkbox");
+
+  await expect(checkboxes).toHaveCount(2);
+  await expect(checkboxes.first()).toHaveCSS("width", "20px");
+  await expect(checkboxes.first()).toHaveCSS("min-height", "20px");
+  await expect(checkboxes.first()).toHaveCSS("padding", "0px");
+  await expect(checkboxes.first()).toHaveCSS("box-shadow", "none");
+  await expect(checkboxes.nth(1)).toBeChecked();
+
+  await checkboxes.first().click();
+  await expect(checkboxes.first()).toBeChecked();
 });

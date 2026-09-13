@@ -1269,11 +1269,48 @@ body {
 }
 
 .note-markdown .checklist-item input[type="checkbox"] {
-  inline-size: 1.15rem;
-  block-size: 1.15rem;
+  appearance: none;
+  display: grid;
+  place-content: center;
+  flex: 0 0 1.25rem;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  min-inline-size: 1.25rem;
+  min-block-size: 1.25rem;
+  padding: 0;
   margin-block-start: 0.2rem;
-  accent-color: var(--color-accent);
+  border: 2px solid var(--color-ink);
+  border-radius: 0.2rem;
+  background: var(--color-surface-raised);
+  box-shadow: none;
   cursor: pointer;
+}
+
+.note-markdown .checklist-item input[type="checkbox"]::before {
+  content: "";
+  inline-size: 0.7rem;
+  block-size: 0.7rem;
+  background: #fff;
+  clip-path: polygon(14% 44%, 0 59%, 40% 100%, 100% 16%, 84% 0, 38% 70%);
+  transform: scale(0);
+  transition: transform var(--motion-fast) var(--ease-standard);
+}
+
+.note-markdown .checklist-item input[type="checkbox"]:checked {
+  background: var(--color-accent);
+}
+
+.note-markdown .checklist-item input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+
+.note-markdown .checklist-item input[type="checkbox"]:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.note-markdown .checklist-item input[type="checkbox"]:disabled {
+  cursor: default;
+  opacity: 0.65;
 }
 
 .note-markdown .checklist-item--checked {
