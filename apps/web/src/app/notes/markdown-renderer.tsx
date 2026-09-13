@@ -1,6 +1,15 @@
 "use client";
 
-import { type ReactNode, useMemo } from "react";
+import { Check, Copy } from "lucide-react";
+import {
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 type MarkdownRendererProps = {
   content: string;
@@ -20,6 +29,91 @@ type Block =
   | { type: "quote"; text: string }
   | { type: "codeblock"; lang?: string; code: string }
   | { type: "hr" };
+
+type CopyState = "idle" | "copied" | "error";
+
+async function copyText(text: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const previousFocus =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  textarea.style.pointerEvents = "none";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    if (!document.execCommand("copy")) throw new Error("Copy command was rejected");
+  } finally {
+    textarea.remove();
+    previousFocus?.focus({ preventScroll: true });
+  }
+}
+
+function CodeBlock({ code, lang }: { code: string; lang?: string }) {
+  const [copyState, setCopyState] = useState<CopyState>("idle");
+  const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const languageLabel = lang?.trim() || "Code";
+  const buttonLabel =
+    copyState === "copied" ? "Copied" : copyState === "error" ? "Copy failed" : "Copy";
+
+  useEffect(() => {
+    return () => {
+      if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
+    };
+  }, []);
+
+  const stopCardKeyboardAction = (event: KeyboardEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+  };
+
+  const handleCopy = async (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+
+    try {
+      await copyText(code);
+      setCopyState("copied");
+    } catch {
+      setCopyState("error");
+    }
+
+    if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
+    resetTimeoutRef.current = setTimeout(() => setCopyState("idle"), 2000);
+  };
+
+  return (
+    <div className="note-code-block" dir="ltr" onClick={(event) => event.stopPropagation()}>
+      <div className="note-code-toolbar">
+        <span className="note-code-language">{languageLabel}</span>
+        <button
+          type="button"
+          className={`note-code-copy ${copyState === "copied" ? "note-code-copy--copied" : ""}`}
+          onClick={(event) => void handleCopy(event)}
+          onKeyDown={stopCardKeyboardAction}
+          aria-label={`${buttonLabel}: ${languageLabel} code`}
+          title={`${buttonLabel} code`}
+        >
+          {copyState === "copied" ? (
+            <Check size={14} aria-hidden="true" />
+          ) : (
+            <Copy size={14} aria-hidden="true" />
+          )}
+          <span aria-live="polite">{buttonLabel}</span>
+        </button>
+      </div>
+      <pre tabIndex={0}>
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
 
 function formatInline(text: string): ReactNode[] {
   // Replace bold **text** or __text__
@@ -318,11 +412,7 @@ export function MarkdownRenderer({
               </blockquote>
             );
           case "codeblock":
-            return (
-              <pre key={idx} dir="ltr">
-                <code>{block.code}</code>
-              </pre>
-            );
+            return <CodeBlock key={idx} code={block.code} lang={block.lang} />;
           case "hr":
             return <hr key={idx} />;
           case "p":
