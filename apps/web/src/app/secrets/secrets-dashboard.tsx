@@ -33,7 +33,12 @@ import {
   Select,
   Switch,
 } from "@reminder/ui";
-import { parseEnvFile, type Project, type ProjectEnvironment, type ProjectSecret } from "@reminder/domain";
+import {
+  parseEnvFile,
+  type Project,
+  type ProjectEnvironment,
+  type ProjectSecret,
+} from "@reminder/domain";
 
 export function SecretsDashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -123,7 +128,9 @@ export function SecretsDashboard() {
       const envs = (await res.json()) as ProjectEnvironment[];
       setEnvironments(envs);
       if (envs.length > 0) {
-        setSelectedEnvId((prev) => (envs.some((e) => e.id === prev) ? prev : (envs[0]?.id ?? null)));
+        setSelectedEnvId((prev) =>
+          envs.some((e) => e.id === prev) ? prev : (envs[0]?.id ?? null),
+        );
       } else {
         setSelectedEnvId(null);
         setSecrets([]);
@@ -256,11 +263,14 @@ export function SecretsDashboard() {
     setActionLoading(true);
     setEnvModalError(null);
     try {
-      const res = await fetch(`/api/v1/secrets/projects/${selectedProjectId}/environments/${editingEnv.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editEnvName.trim() }),
-      });
+      const res = await fetch(
+        `/api/v1/secrets/projects/${selectedProjectId}/environments/${editingEnv.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: editEnvName.trim() }),
+        },
+      );
       if (!res.ok) {
         const errorData = await res.json().catch(() => null);
         throw new Error(errorData?.error?.message || "Failed to update environment");
@@ -375,16 +385,21 @@ export function SecretsDashboard() {
     setActionLoading(true);
     try {
       if (deleteTarget.type === "project") {
-        const res = await fetch(`/api/v1/secrets/projects/${deleteTarget.id}`, { method: "DELETE" });
+        const res = await fetch(`/api/v1/secrets/projects/${deleteTarget.id}`, {
+          method: "DELETE",
+        });
         if (!res.ok) {
           const errorData = await res.json().catch(() => null);
           throw new Error(errorData?.error?.message || "Failed to delete project");
         }
         await loadProjects();
       } else if (deleteTarget.type === "environment" && selectedProjectId) {
-        const res = await fetch(`/api/v1/secrets/projects/${selectedProjectId}/environments/${deleteTarget.id}`, {
-          method: "DELETE",
-        });
+        const res = await fetch(
+          `/api/v1/secrets/projects/${selectedProjectId}/environments/${deleteTarget.id}`,
+          {
+            method: "DELETE",
+          },
+        );
         if (!res.ok) {
           const errorData = await res.json().catch(() => null);
           throw new Error(errorData?.error?.message || "Failed to delete environment");
@@ -496,10 +511,7 @@ export function SecretsDashboard() {
                 {environments.map((env) => {
                   const isActive = env.id === selectedEnvId;
                   return (
-                    <div
-                      key={env.id}
-                      className={`env-tab ${isActive ? "env-tab--active" : ""}`}
-                    >
+                    <div key={env.id} className={`env-tab ${isActive ? "env-tab--active" : ""}`}>
                       <button
                         type="button"
                         className="env-tab-btn"
@@ -556,7 +568,10 @@ export function SecretsDashboard() {
               <div className="empty-state">
                 <KeyRound aria-hidden="true" size={40} />
                 <h2>No Environments Yet</h2>
-                <p>Create an environment (such as development, staging, or production) to start managing secrets.</p>
+                <p>
+                  Create an environment (such as development, staging, or production) to start
+                  managing secrets.
+                </p>
                 <Button
                   variant="primary"
                   onClick={() => {
@@ -598,165 +613,178 @@ export function SecretsDashboard() {
 
                 {/* Controls Toolbar */}
                 <section className="dashboard-controls" aria-label="Secrets controls">
-              <div className="dashboard-actions">
-                <div className={`secrets-tools-group ${toolsOpen ? "secrets-tools-group--open" : ""}`}>
-                  <Button variant="secondary" onClick={handleOpenExport} disabled={secrets.length === 0}>
-                    <Download aria-hidden="true" size={16} />
-                    Export .env
-                  </Button>
-                  <Button variant="secondary" onClick={() => setImportModalOpen(true)}>
-                    <Upload aria-hidden="true" size={16} />
-                    Import .env
-                  </Button>
-                </div>
-                <Button variant="primary" onClick={openCreateSecret}>
-                  <Plus aria-hidden="true" size={16} />
-                  Add variable
-                </Button>
-              </div>
+                  <div className="dashboard-actions">
+                    <div
+                      className={`secrets-tools-group ${toolsOpen ? "secrets-tools-group--open" : ""}`}
+                    >
+                      <Button
+                        variant="secondary"
+                        onClick={handleOpenExport}
+                        disabled={secrets.length === 0}
+                      >
+                        <Download aria-hidden="true" size={16} />
+                        Export .env
+                      </Button>
+                      <Button variant="secondary" onClick={() => setImportModalOpen(true)}>
+                        <Upload aria-hidden="true" size={16} />
+                        Import .env
+                      </Button>
+                    </div>
+                    <Button variant="primary" onClick={openCreateSecret}>
+                      <Plus aria-hidden="true" size={16} />
+                      Add variable
+                    </Button>
+                  </div>
 
-              <div className="toolbar">
-                <label className="toolbar-field toolbar-field--search">
-                  Search variables
-                  <span className="search-field">
-                    <Search aria-hidden="true" size={18} />
-                    <input
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search by key name or comment"
-                    />
-                  </span>
-                </label>
-                <button
-                  type="button"
-                  className={`filter-toggle-btn ${toolsOpen ? "filter-toggle-btn--open" : ""}`}
-                  onClick={() => setToolsOpen((prev) => !prev)}
-                  aria-label={toolsOpen ? "Hide tools" : "Show tools"}
-                  aria-expanded={toolsOpen}
-                >
-                  <SlidersHorizontal aria-hidden="true" size={16} />
-                  <span>Tools</span>
-                </button>
-              </div>
-            </section>
+                  <div className="toolbar">
+                    <label className="toolbar-field toolbar-field--search">
+                      Search variables
+                      <span className="search-field">
+                        <Search aria-hidden="true" size={18} />
+                        <input
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          placeholder="Search by key name or comment"
+                        />
+                      </span>
+                    </label>
+                    <button
+                      type="button"
+                      className={`filter-toggle-btn ${toolsOpen ? "filter-toggle-btn--open" : ""}`}
+                      onClick={() => setToolsOpen((prev) => !prev)}
+                      aria-label={toolsOpen ? "Hide tools" : "Show tools"}
+                      aria-expanded={toolsOpen}
+                    >
+                      <SlidersHorizontal aria-hidden="true" size={16} />
+                      <span>Tools</span>
+                    </button>
+                  </div>
+                </section>
 
-            {/* Secrets Table */}
-            {secrets.length === 0 ? (
-              <div className="empty-state">
-                <KeyRound aria-hidden="true" size={40} />
-                <p>No environment variables defined in {activeEnvironment?.name ?? "this environment"}.</p>
-                <div className="empty-actions">
-                  <Button variant="primary" onClick={openCreateSecret}>
-                    <Plus size={16} /> Add variable
-                  </Button>
-                  <Button variant="secondary" onClick={() => setImportModalOpen(true)}>
-                    <Upload size={16} /> Import from .env
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="secrets-table-container">
-                <table className="secrets-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: "30%" }}>Key</th>
-                      <th style={{ width: "40%" }}>Value</th>
-                      <th style={{ width: "20%" }}>Comment</th>
-                      <th style={{ width: "10%", textAlign: "right" }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredSecrets.map((secret) => {
-                      const isRevealed = revealedSecrets[secret.id] || !secret.isSecret;
-                      const isCopied = copiedKey === secret.key;
-
-                      return (
-                        <tr key={secret.id} className="secret-row">
-                          <td className="secret-key-cell">
-                            <code>{secret.key}</code>
-                          </td>
-                          <td className="secret-value-cell">
-                            <div className="secret-value-box">
-                              <span className="secret-value-text">
-                                {isRevealed ? (
-                                  secret.value || <em className="text-muted">(empty)</em>
-                                ) : (
-                                  "••••••••••••••••"
-                                )}
-                              </span>
-                              <div className="secret-value-buttons">
-                                {secret.isSecret && (
-                                  <button
-                                    type="button"
-                                    className="icon-button"
-                                    onClick={() => toggleReveal(secret.id)}
-                                    title={isRevealed ? "Mask secret" : "Reveal secret"}
-                                    aria-label={isRevealed ? "Mask secret" : "Reveal secret"}
-                                  >
-                                    {isRevealed ? <EyeOff size={15} /> : <Eye size={15} />}
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  className="icon-button"
-                                  onClick={() => copyValue(secret.key, secret.value)}
-                                  title="Copy to clipboard"
-                                  aria-label="Copy to clipboard"
-                                >
-                                  {isCopied ? <Check size={15} className="text-success" /> : <Copy size={15} />}
-                                </button>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="secret-comment-cell">
-                            {secret.comment ? (
-                              <span className="secret-comment-badge">{secret.comment}</span>
-                            ) : (
-                              <span className="text-muted">—</span>
-                            )}
-                          </td>
-                          <td className="secret-actions-cell">
-                            <div className="row-actions">
-                              <Button
-                                variant="ghost"
-                                onClick={() => openEditSecret(secret)}
-                                aria-label="Edit secret"
-                              >
-                                <Edit3 size={15} />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                onClick={() =>
-                                  setDeleteTarget({
-                                    type: "secret",
-                                    id: secret.id,
-                                    name: secret.key,
-                                  })
-                                }
-                                aria-label="Delete secret"
-                                className="text-destructive"
-                              >
-                                <Trash2 size={15} />
-                              </Button>
-                            </div>
-                          </td>
+                {/* Secrets Table */}
+                {secrets.length === 0 ? (
+                  <div className="empty-state">
+                    <KeyRound aria-hidden="true" size={40} />
+                    <p>
+                      No environment variables defined in{" "}
+                      {activeEnvironment?.name ?? "this environment"}.
+                    </p>
+                    <div className="empty-actions">
+                      <Button variant="primary" onClick={openCreateSecret}>
+                        <Plus size={16} /> Add variable
+                      </Button>
+                      <Button variant="secondary" onClick={() => setImportModalOpen(true)}>
+                        <Upload size={16} /> Import from .env
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="secrets-table-container">
+                    <table className="secrets-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: "30%" }}>Key</th>
+                          <th style={{ width: "40%" }}>Value</th>
+                          <th style={{ width: "20%" }}>Comment</th>
+                          <th style={{ width: "10%", textAlign: "right" }}>Actions</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                      </thead>
+                      <tbody>
+                        {filteredSecrets.map((secret) => {
+                          const isRevealed = revealedSecrets[secret.id] || !secret.isSecret;
+                          const isCopied = copiedKey === secret.key;
+
+                          return (
+                            <tr key={secret.id} className="secret-row">
+                              <td className="secret-key-cell">
+                                <code>{secret.key}</code>
+                              </td>
+                              <td className="secret-value-cell">
+                                <div className="secret-value-box">
+                                  <span className="secret-value-text">
+                                    {isRevealed
+                                      ? secret.value || <em className="text-muted">(empty)</em>
+                                      : "••••••••••••••••"}
+                                  </span>
+                                  <div className="secret-value-buttons">
+                                    {secret.isSecret && (
+                                      <button
+                                        type="button"
+                                        className="icon-button"
+                                        onClick={() => toggleReveal(secret.id)}
+                                        title={isRevealed ? "Mask secret" : "Reveal secret"}
+                                        aria-label={isRevealed ? "Mask secret" : "Reveal secret"}
+                                      >
+                                        {isRevealed ? <EyeOff size={15} /> : <Eye size={15} />}
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      className="icon-button"
+                                      onClick={() => copyValue(secret.key, secret.value)}
+                                      title="Copy to clipboard"
+                                      aria-label="Copy to clipboard"
+                                    >
+                                      {isCopied ? (
+                                        <Check size={15} className="text-success" />
+                                      ) : (
+                                        <Copy size={15} />
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="secret-comment-cell">
+                                {secret.comment ? (
+                                  <span className="secret-comment-badge">{secret.comment}</span>
+                                ) : (
+                                  <span className="text-muted">—</span>
+                                )}
+                              </td>
+                              <td className="secret-actions-cell">
+                                <div className="row-actions">
+                                  <Button
+                                    variant="ghost"
+                                    onClick={() => openEditSecret(secret)}
+                                    aria-label="Edit secret"
+                                  >
+                                    <Edit3 size={15} />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    onClick={() =>
+                                      setDeleteTarget({
+                                        type: "secret",
+                                        id: secret.id,
+                                        name: secret.key,
+                                      })
+                                    }
+                                    aria-label="Delete secret"
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 size={15} />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
-      </>
-    )}
 
         {projects.length === 0 && !loading && (
           <div className="empty-state">
             <FileCode aria-hidden="true" size={44} />
             <h2>No Projects Yet</h2>
-            <p>Create a project to start managing its environment variables and secrets securely.</p>
+            <p>
+              Create a project to start managing its environment variables and secrets securely.
+            </p>
             <Button variant="primary" onClick={() => setNewProjectOpen(true)}>
               <FolderPlus size={16} /> Create your first project
             </Button>
@@ -771,7 +799,8 @@ export function SecretsDashboard() {
             <DialogHeader>
               <DialogTitle>Create new project</DialogTitle>
               <DialogDescription>
-                A project holds separate environments (dev, staging, prod) and their encrypted `.env` secrets.
+                A project holds separate environments (dev, staging, prod) and their encrypted
+                `.env` secrets.
               </DialogDescription>
             </DialogHeader>
             <div className="dialog-fields">
@@ -798,7 +827,11 @@ export function SecretsDashboard() {
               <Button variant="secondary" type="button" onClick={() => setNewProjectOpen(false)}>
                 Cancel
               </Button>
-              <Button variant="primary" type="submit" disabled={actionLoading || !newProjectName.trim()}>
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={actionLoading || !newProjectName.trim()}
+              >
                 {actionLoading && <LoaderCircle className="spin" size={16} />}
                 Create project
               </Button>
@@ -824,7 +857,10 @@ export function SecretsDashboard() {
               </DialogDescription>
             </DialogHeader>
             {newEnvModalError && (
-              <div className="status-banner status-banner--error" style={{ margin: "var(--space-3) 0" }}>
+              <div
+                className="status-banner status-banner--error"
+                style={{ margin: "var(--space-3) 0" }}
+              >
                 <CircleAlert aria-hidden="true" size={16} />
                 <span>{newEnvModalError}</span>
               </div>
@@ -847,7 +883,11 @@ export function SecretsDashboard() {
               <Button variant="secondary" type="button" onClick={() => setNewEnvOpen(false)}>
                 Cancel
               </Button>
-              <Button variant="primary" type="submit" disabled={actionLoading || !newEnvName.trim()}>
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={actionLoading || !newEnvName.trim()}
+              >
                 {actionLoading && <LoaderCircle className="spin" size={16} />}
                 Add environment
               </Button>
@@ -869,11 +909,15 @@ export function SecretsDashboard() {
             <DialogHeader>
               <DialogTitle>Edit environment</DialogTitle>
               <DialogDescription>
-                Update the environment name. Must only contain alphanumeric characters, hyphens, and underscores.
+                Update the environment name. Must only contain alphanumeric characters, hyphens, and
+                underscores.
               </DialogDescription>
             </DialogHeader>
             {envModalError && (
-              <div className="status-banner status-banner--error" style={{ margin: "var(--space-3) 0" }}>
+              <div
+                className="status-banner status-banner--error"
+                style={{ margin: "var(--space-3) 0" }}
+              >
                 <CircleAlert aria-hidden="true" size={16} />
                 <span>{envModalError}</span>
               </div>
@@ -899,7 +943,9 @@ export function SecretsDashboard() {
               <Button
                 variant="primary"
                 type="submit"
-                disabled={actionLoading || !editEnvName.trim() || editEnvName.trim() === editingEnv?.name}
+                disabled={
+                  actionLoading || !editEnvName.trim() || editEnvName.trim() === editingEnv?.name
+                }
               >
                 {actionLoading && <LoaderCircle className="spin" size={16} />}
                 Save changes
@@ -914,7 +960,9 @@ export function SecretsDashboard() {
         <DialogContent>
           <form onSubmit={handleSaveSecret}>
             <DialogHeader>
-              <DialogTitle>{editingSecret ? "Edit variable" : "Add environment variable"}</DialogTitle>
+              <DialogTitle>
+                {editingSecret ? "Edit variable" : "Add environment variable"}
+              </DialogTitle>
               <DialogDescription>
                 Secrets are encrypted at rest in PostgreSQL with AES-256-GCM.
               </DialogDescription>
@@ -976,7 +1024,8 @@ export function SecretsDashboard() {
             <DialogHeader>
               <DialogTitle>Import .env file</DialogTitle>
               <DialogDescription>
-                Paste the contents of a `.env` file. Key-value pairs and comments will be parsed and encrypted.
+                Paste the contents of a `.env` file. Key-value pairs and comments will be parsed and
+                encrypted.
               </DialogDescription>
             </DialogHeader>
             <div className="dialog-fields">
@@ -999,7 +1048,11 @@ export function SecretsDashboard() {
               <Button variant="secondary" type="button" onClick={() => setImportModalOpen(false)}>
                 Cancel
               </Button>
-              <Button variant="primary" type="submit" disabled={actionLoading || importPreviewCount === 0}>
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={actionLoading || importPreviewCount === 0}
+              >
                 {actionLoading && <LoaderCircle className="spin" size={16} />}
                 Import {importPreviewCount} variables
               </Button>
@@ -1014,7 +1067,8 @@ export function SecretsDashboard() {
           <DialogHeader>
             <DialogTitle>Export .env for {activeEnvironment?.name}</DialogTitle>
             <DialogDescription>
-              Copy or download this file to use directly as your `.env` in development or deployment.
+              Copy or download this file to use directly as your `.env` in development or
+              deployment.
             </DialogDescription>
           </DialogHeader>
           <div className="dialog-fields">
@@ -1072,7 +1126,12 @@ export function SecretsDashboard() {
             <Button variant="secondary" type="button" onClick={() => setDeleteTarget(null)}>
               Cancel
             </Button>
-            <Button variant="destructive" type="button" onClick={handleDeleteConfirm} disabled={actionLoading}>
+            <Button
+              variant="destructive"
+              type="button"
+              onClick={handleDeleteConfirm}
+              disabled={actionLoading}
+            >
               {actionLoading && <LoaderCircle className="spin" size={16} />}
               Delete {deleteTarget?.type}
             </Button>

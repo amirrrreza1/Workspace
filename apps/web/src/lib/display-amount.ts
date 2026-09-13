@@ -53,12 +53,7 @@ export function sumDisplayAmount(
   for (const amount of amounts) {
     if (!amount) continue;
     if (usdToman) {
-      total += convertMinorAmount(
-        BigInt(amount.minor),
-        amount.currency,
-        displayCurrency,
-        usdToman,
-      );
+      total += convertMinorAmount(BigInt(amount.minor), amount.currency, displayCurrency, usdToman);
     } else if (amount.currency === displayCurrency) {
       total += BigInt(amount.minor);
     }

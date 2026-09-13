@@ -230,9 +230,7 @@ function telegramFailure(
     return new NotificationProviderError(
       "recipient",
       "PROVIDER_RECIPIENT_REJECTED",
-      detail
-        ? `Telegram request error: ${detail}`
-        : "Telegram rejected the configured recipient.",
+      detail ? `Telegram request error: ${detail}` : "Telegram rejected the configured recipient.",
       false,
     );
   if (status === 429)
@@ -371,14 +369,11 @@ export async function sendTelegramDocument(
   const timeout = setTimeout(() => abort.abort(), 30_000);
 
   try {
-    const response = await fetch(
-      `https://api.telegram.org/bot${options.botToken}/sendDocument`,
-      {
-        method: "POST",
-        body: formData,
-        signal: abort.signal,
-      },
-    );
+    const response = await fetch(`https://api.telegram.org/bot${options.botToken}/sendDocument`, {
+      method: "POST",
+      body: formData,
+      signal: abort.signal,
+    });
 
     const retryAfter = Number(response.headers.get("retry-after"));
     const payload: unknown = await response.json().catch(() => null);
@@ -426,4 +421,3 @@ export async function sendTelegramDocument(
     clearTimeout(timeout);
   }
 }
-

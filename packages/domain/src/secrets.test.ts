@@ -20,7 +20,9 @@ describe("secrets domain", () => {
   });
 
   it("validates environment name regex", () => {
-    expect(createEnvironmentSchema.parse({ name: "staging-eu_1" })).toEqual({ name: "staging-eu_1" });
+    expect(createEnvironmentSchema.parse({ name: "staging-eu_1" })).toEqual({
+      name: "staging-eu_1",
+    });
     expect(() => createEnvironmentSchema.parse({ name: "staging space" })).toThrow();
   });
 
@@ -33,7 +35,9 @@ describe("secrets domain", () => {
   });
 
   it("validates secret key format", () => {
-    expect(upsertSecretSchema.parse({ key: "DATABASE_URL", value: "postgres://localhost" })).toEqual({
+    expect(
+      upsertSecretSchema.parse({ key: "DATABASE_URL", value: "postgres://localhost" }),
+    ).toEqual({
       key: "DATABASE_URL",
       value: "postgres://localhost",
       isSecret: true,
@@ -58,7 +62,11 @@ export API_ENABLED=true
       const entries = parseEnvFile(raw);
       expect(entries).toEqual([
         { key: "APP_PORT", value: "3000", comment: "Global Config" },
-        { key: "DATABASE_URL", value: "postgres://user:pass@localhost:5432/db", comment: "DB string" },
+        {
+          key: "DATABASE_URL",
+          value: "postgres://user:pass@localhost:5432/db",
+          comment: "DB string",
+        },
         { key: "SECRET_KEY", value: "super_secret_jwt", comment: "Auth settings" },
         { key: "EMPTY_VAL", value: "" },
         { key: "MULTILINE", value: "first line\nsecond line" },

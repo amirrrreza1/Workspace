@@ -1,11 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import {
-  SESSION_COOKIE_NAME,
-  authPassword,
-  isPublicPath,
-  verifySessionToken,
-} from "@/lib/auth";
+import { SESSION_COOKIE_NAME, authPassword, isPublicPath, verifySessionToken } from "@/lib/auth";
 
 /**
  * Fail-closed gate for the whole app. Doing this in middleware rather than in each

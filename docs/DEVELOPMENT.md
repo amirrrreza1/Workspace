@@ -23,11 +23,11 @@ pnpm dev:up
 
 What `dev:all` watches:
 
-| Process | Command | Reloads on |
-| --- | --- | --- |
-| Web | `next dev` (port 3100) | `apps/web/**`, `packages/ui/**` — Fast Refresh, no restart |
-| Worker | `tsx watch` | `apps/worker/**` — process restarts |
-| `@reminder/config`, `db`, `domain`, `notifications` | `tsc --watch` | their `src/**` — recompiles `dist/`, which then triggers the web/worker reload |
+| Process                                             | Command                | Reloads on                                                                     |
+| --------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------ |
+| Web                                                 | `next dev` (port 3100) | `apps/web/**`, `packages/ui/**` — Fast Refresh, no restart                     |
+| Worker                                              | `tsx watch`            | `apps/worker/**` — process restarts                                            |
+| `@reminder/config`, `db`, `domain`, `notifications` | `tsc --watch`          | their `src/**` — recompiles `dist/`, which then triggers the web/worker reload |
 
 `@reminder/ui` is exported straight from source (`exports["."].import` → `./src/index.ts`),
 so component and CSS edits there hit the browser immediately with no compile step.
@@ -58,11 +58,11 @@ Stop everything with `Ctrl+C`, then `pnpm dev:db:stop` if you also want Postgres
 
 ### Ports
 
-| Port | What |
-| --- | --- |
+| Port | What                                                    |
+| ---- | ------------------------------------------------------- |
 | 3100 | `next dev` — moved off 3000, which another project uses |
-| 5432 | Postgres (dev overlay only) |
-| 1234 | production compose stack (`APP_PORT`) |
+| 5432 | Postgres (dev overlay only)                             |
+| 1234 | production compose stack (`APP_PORT`)                   |
 
 Set `POSTGRES_PORT` in `.env` if 5432 is already taken on your machine, and update
 `DATABASE_URL` to match.

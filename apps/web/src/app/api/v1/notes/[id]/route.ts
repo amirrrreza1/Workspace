@@ -10,7 +10,12 @@ export async function GET(_request: Request, context: Context) {
     const { id } = await context.params;
     const note = await notesRepository().getById(id);
     if (!note) {
-      return noStore(Response.json({ error: { code: "NOT_FOUND", message: "Note not found." } }, { status: 404 }));
+      return noStore(
+        Response.json(
+          { error: { code: "NOT_FOUND", message: "Note not found." } },
+          { status: 404 },
+        ),
+      );
     }
     return noStore(Response.json(note));
   } catch (error) {
@@ -35,7 +40,12 @@ export async function DELETE(_request: Request, context: Context) {
     const { id } = await context.params;
     const deleted = await notesRepository().delete(id);
     if (!deleted) {
-      return noStore(Response.json({ error: { code: "NOT_FOUND", message: "Note not found." } }, { status: 404 }));
+      return noStore(
+        Response.json(
+          { error: { code: "NOT_FOUND", message: "Note not found." } },
+          { status: 404 },
+        ),
+      );
     }
     return new Response(null, { status: 204, headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {

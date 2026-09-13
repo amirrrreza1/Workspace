@@ -16,7 +16,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "Workspace - Notes, Reminders & Secrets",
-  description: "Personal productivity workspace for your reminders, notes, and project environment secrets.",
+  description:
+    "Personal productivity workspace for your reminders, notes, and project environment secrets.",
   icons: {
     icon: [
       { url: "/icon.png", type: "image/png" },
@@ -49,4 +50,3 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     </html>
   );
 }
-

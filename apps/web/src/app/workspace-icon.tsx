@@ -1,7 +1,6 @@
 ﻿import type { ImgHTMLAttributes } from "react";
 
-export interface WorkspaceIconProps
-  extends Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> {
+export interface WorkspaceIconProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> {
   size?: number | string;
   variant?: "mark" | "tile";
 }

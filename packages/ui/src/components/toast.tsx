@@ -1,14 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 
 import { cn } from "../lib/cn";
 
@@ -33,11 +26,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const dismiss = useCallback((id: number) => {
     setItems((current) => current.filter((item) => item.id !== id));
   }, []);
-  const toast = useCallback((message: string, tone: ToastTone = "error") => {
-    const id = nextId++;
-    setItems((current) => [...current, { id, message, tone }]);
-    window.setTimeout(() => dismiss(id), 6_000);
-  }, [dismiss]);
+  const toast = useCallback(
+    (message: string, tone: ToastTone = "error") => {
+      const id = nextId++;
+      setItems((current) => [...current, { id, message, tone }]);
+      window.setTimeout(() => dismiss(id), 6_000);
+    },
+    [dismiss],
+  );
   const value = useMemo(() => ({ toast }), [toast]);
 
   return (

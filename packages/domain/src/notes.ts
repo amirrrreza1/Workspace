@@ -20,11 +20,7 @@ export const createNoteSchema = z.object({
   content: z.string().default(""),
   tags: z
     .array(
-      z
-        .string()
-        .trim()
-        .min(1, "Tag cannot be empty")
-        .max(30, "Tag must be at most 30 characters"),
+      z.string().trim().min(1, "Tag cannot be empty").max(30, "Tag must be at most 30 characters"),
     )
     .max(20, "At most 20 tags are allowed")
     .default([]),
@@ -43,11 +39,7 @@ export const updateNoteSchema = z.object({
   content: z.string().optional(),
   tags: z
     .array(
-      z
-        .string()
-        .trim()
-        .min(1, "Tag cannot be empty")
-        .max(30, "Tag must be at most 30 characters"),
+      z.string().trim().min(1, "Tag cannot be empty").max(30, "Tag must be at most 30 characters"),
     )
     .max(20, "At most 20 tags are allowed")
     .optional(),

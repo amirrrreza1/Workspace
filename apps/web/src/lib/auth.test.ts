@@ -125,4 +125,3 @@ describe("isPublicPath", () => {
     expect(isPublicPath("/api/v1/secrets.png")).toBe(false);
   });
 });
-

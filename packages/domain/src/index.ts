@@ -12,4 +12,3 @@ export const APP_NAME = "Workspace" as const;
 export function assertNever(value: never, message = "Unexpected value"): never {
   throw new Error(`${message}: ${String(value)}`);
 }
-

@@ -10,10 +10,7 @@ export function resetUsdTomanRateCache(): void {
   cache = undefined;
 }
 
-export async function fetchUsdTomanRate(
-  token: string,
-  now = Date.now(),
-): Promise<bigint> {
+export async function fetchUsdTomanRate(token: string, now = Date.now()): Promise<bigint> {
   if (!token) throw new Error("Nerkh API token is not configured.");
   if (cache && cache.expiresAt > now) return cache.value;
 

@@ -36,9 +36,7 @@ export function parseUsdTomanRate(payload: unknown): bigint {
   const prices = readPrices(payload);
   const current =
     readCurrent(prices) ??
-    (typeof prices === "object" && prices && "USD" in prices
-      ? readCurrent(prices.USD)
-      : undefined);
+    (typeof prices === "object" && prices && "USD" in prices ? readCurrent(prices.USD) : undefined);
   if (!current) throw new RangeError("Nerkh USD rate is missing.");
   return current;
 }

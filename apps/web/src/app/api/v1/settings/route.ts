@@ -19,9 +19,7 @@ function presentSettings<
   const config = getConfig();
   return {
     ...settings,
-    defaultCurrency: config.nerkhConfigured
-      ? settings.defaultCurrency
-      : config.DEFAULT_CURRENCY,
+    defaultCurrency: config.nerkhConfigured ? settings.defaultCurrency : config.DEFAULT_CURRENCY,
     backupTelegramChatId: settings.backupTelegramChatId ?? (config.TELEGRAM_BACKUP_CHAT_ID || null),
     providers: providerStatus(),
     currencyConversion: currencyConversionStatus(),

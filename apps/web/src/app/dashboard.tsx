@@ -609,7 +609,9 @@ export function Dashboard() {
                 </span>
               )}
             </button>
-            <div className={`toolbar-filters-group ${mobileFiltersOpen ? "toolbar-filters-group--open" : ""}`}>
+            <div
+              className={`toolbar-filters-group ${mobileFiltersOpen ? "toolbar-filters-group--open" : ""}`}
+            >
               <label className="toolbar-field">
                 Type
                 <Select
@@ -782,9 +784,7 @@ function ReminderCard({
       </div>
       <div className="card-meta">
         <span>{recurrenceLabel(reminder.schedule)}</span>
-        <span className="card-amount">
-          {amount ? `${amount} ${amountCurrency}` : ""}
-        </span>
+        <span className="card-amount">{amount ? `${amount} ${amountCurrency}` : ""}</span>
       </div>
       <div className="card-footer">
         <div className="channel-list" aria-label="Notification channels">
@@ -1185,8 +1185,7 @@ function ReminderModal({
                     onCheckedChange={(value) => change("email", value)}
                     disabled={!emailChannel.allowed && !draft.email}
                   />
-                  Email{" "}
-                  {emailChannel.hint && <small>{emailChannel.hint}</small>}
+                  Email {emailChannel.hint && <small>{emailChannel.hint}</small>}
                 </label>
                 <label>
                   <Switch
@@ -1194,8 +1193,7 @@ function ReminderModal({
                     onCheckedChange={(value) => change("telegram", value)}
                     disabled={!telegramChannel.allowed && !draft.telegram}
                   />
-                  Telegram{" "}
-                  {telegramChannel.hint && <small>{telegramChannel.hint}</small>}
+                  Telegram {telegramChannel.hint && <small>{telegramChannel.hint}</small>}
                 </label>
               </div>
             </fieldset>
@@ -1626,9 +1624,7 @@ function SettingsModal({
                       className="backup-telegram-input"
                       placeholder="e.g. @my_channel or -1001234567890"
                       value={draft.backupTelegramChatId ?? ""}
-                      onChange={(e) =>
-                        setDraft({ ...draft, backupTelegramChatId: e.target.value })
-                      }
+                      onChange={(e) => setDraft({ ...draft, backupTelegramChatId: e.target.value })}
                     />
                     <Button
                       variant="secondary"
@@ -1652,7 +1648,8 @@ function SettingsModal({
                     </Button>
                   </div>
                   <small className="backup-hint">
-                    Note: The Telegram bot must be an administrator in the channel with permission to post messages.
+                    Note: The Telegram bot must be an administrator in the channel with permission
+                    to post messages.
                   </small>
                 </div>
               </fieldset>

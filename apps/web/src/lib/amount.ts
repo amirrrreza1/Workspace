@@ -12,8 +12,7 @@ export function parseAmount(
     throw new Error("Enter a non-negative amount with no currency symbol.");
 
   if (currency === "IRR") {
-    if (clean.includes("."))
-      throw new Error("IRR amounts must be a whole number, like 125000.");
+    if (clean.includes(".")) throw new Error("IRR amounts must be a whole number, like 125000.");
     if (!/^\d+$/.test(clean))
       throw new Error("Enter a non-negative amount with no currency symbol.");
     if (BigInt(clean) > 9_999_999_999_999n)

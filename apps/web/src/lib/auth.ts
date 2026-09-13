@@ -197,4 +197,3 @@ export function isPublicPath(pathname: string): boolean {
   if (!pathname.startsWith("/api/") && STATIC_ASSET_EXTENSIONS.test(pathname)) return true;
   return false;
 }
-

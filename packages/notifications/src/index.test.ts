@@ -64,9 +64,11 @@ describe("Telegram provider", () => {
 
 describe("sendTelegramDocument", () => {
   it("sends document to telegram and returns providerMessageId", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ ok: true, result: { message_id: 101 } }), { status: 200 }),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ok: true, result: { message_id: 101 } }), { status: 200 }),
+      );
     globalThis.fetch = fetchMock;
 
     const receipt = await sendTelegramDocument({
@@ -112,4 +114,3 @@ describe("sendTelegramDocument", () => {
     );
   });
 });
-

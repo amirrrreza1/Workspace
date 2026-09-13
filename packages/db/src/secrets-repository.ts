@@ -113,7 +113,9 @@ export class SecretsRepository {
     });
   }
 
-  async getProject(id: string): Promise<{ project: Project; environments: ProjectEnvironment[] } | null> {
+  async getProject(
+    id: string,
+  ): Promise<{ project: Project; environments: ProjectEnvironment[] } | null> {
     return this.withSql(async (sql) => {
       const projectRows = await sql<ProjectRow[]>`
         select
@@ -240,7 +242,10 @@ export class SecretsRepository {
     });
   }
 
-  async createEnvironment(projectId: string, data: CreateEnvironmentInput): Promise<ProjectEnvironment> {
+  async createEnvironment(
+    projectId: string,
+    data: CreateEnvironmentInput,
+  ): Promise<ProjectEnvironment> {
     return this.withSql(async (sql) => {
       const duplicate = await sql<EnvironmentRow[]>`
         select id from project_environments
@@ -375,7 +380,11 @@ export class SecretsRepository {
     });
   }
 
-  async upsertSecret(projectId: string, envId: string, data: UpsertSecretInput): Promise<ProjectSecret> {
+  async upsertSecret(
+    projectId: string,
+    envId: string,
+    data: UpsertSecretInput,
+  ): Promise<ProjectSecret> {
     return this.withSql(async (sql) => {
       const encrypted = encryptSecret(data.value, this.masterKey);
 
@@ -437,7 +446,11 @@ export class SecretsRepository {
     });
   }
 
-  async importEnv(projectId: string, envId: string, data: ImportEnvInput): Promise<{ importedCount: number }> {
+  async importEnv(
+    projectId: string,
+    envId: string,
+    data: ImportEnvInput,
+  ): Promise<{ importedCount: number }> {
     const entries = parseEnvFile(data.rawContent);
     for (const entry of entries) {
       await this.upsertSecret(projectId, envId, {

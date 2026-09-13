@@ -1,4 +1,10 @@
-import type { CreateNoteInput, Note, NoteFilter, NotesSummary, UpdateNoteInput } from "@reminder/domain";
+import type {
+  CreateNoteInput,
+  Note,
+  NoteFilter,
+  NotesSummary,
+  UpdateNoteInput,
+} from "@reminder/domain";
 import type { Sql } from "postgres";
 
 import { NotFoundError, StaleWriteError } from "./errors.js";

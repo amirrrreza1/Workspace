@@ -114,4 +114,3 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
     </main>
   );
 }
-

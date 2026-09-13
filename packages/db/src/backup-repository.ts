@@ -345,7 +345,8 @@ export class BackupRepository {
           const rCreated = r.createdAt ? new Date(r.createdAt) : new Date();
           const rUpdated = r.updatedAt ? new Date(r.updatedAt) : new Date();
           const nextNotification = r.nextNotificationAt ? new Date(r.nextNotificationAt) : null;
-          const amountMinor = r.amountMinor !== null && r.amountMinor !== undefined ? String(r.amountMinor) : null;
+          const amountMinor =
+            r.amountMinor !== null && r.amountMinor !== undefined ? String(r.amountMinor) : null;
 
           await tx`
             insert into reminders (

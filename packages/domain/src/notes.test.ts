@@ -39,4 +39,3 @@ describe("notes domain", () => {
     expect(filter.sort).toBe("title_asc");
   });
 });
-

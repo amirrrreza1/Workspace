@@ -63,7 +63,10 @@ export const createEnvironmentSchema = z.object({
     .trim()
     .min(1, "Environment name cannot be empty")
     .max(60, "Environment name must be at most 60 characters")
-    .regex(/^[a-zA-Z0-9_-]+$/, "Environment name must only contain alphanumeric characters, hyphens, and underscores"),
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      "Environment name must only contain alphanumeric characters, hyphens, and underscores",
+    ),
 });
 
 export type CreateEnvironmentInput = z.infer<typeof createEnvironmentSchema>;
@@ -74,7 +77,10 @@ export const updateEnvironmentSchema = z.object({
     .trim()
     .min(1, "Environment name cannot be empty")
     .max(60, "Environment name must be at most 60 characters")
-    .regex(/^[a-zA-Z0-9_-]+$/, "Environment name must only contain alphanumeric characters, hyphens, and underscores"),
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      "Environment name must only contain alphanumeric characters, hyphens, and underscores",
+    ),
 });
 
 export type UpdateEnvironmentInput = z.infer<typeof updateEnvironmentSchema>;
@@ -85,7 +91,10 @@ export const upsertSecretSchema = z.object({
     .trim()
     .min(1, "Secret key cannot be empty")
     .max(255, "Secret key must be at most 255 characters")
-    .regex(/^[A-Za-z_][A-Za-z0-9_]*$/, "Secret key must be a valid environment variable name (e.g. DATABASE_URL)"),
+    .regex(
+      /^[A-Za-z_][A-Za-z0-9_]*$/,
+      "Secret key must be a valid environment variable name (e.g. DATABASE_URL)",
+    ),
   value: z.string(),
   comment: z.string().trim().max(500).optional().nullable(),
   isSecret: z.boolean().default(true),
@@ -225,7 +234,9 @@ export function parseEnvFile(raw: string): ParsedEnvEntry[] {
 /**
  * Serializes secrets entries into standard .env format text.
  */
-export function formatEnvFile(entries: { key: string; value: string; comment?: string | null }[]): string {
+export function formatEnvFile(
+  entries: { key: string; value: string; comment?: string | null }[],
+): string {
   return entries
     .map((entry) => {
       const lines: string[] = [];
@@ -235,7 +246,13 @@ export function formatEnvFile(entries: { key: string; value: string; comment?: s
         }
       }
       let val = entry.value;
-      if (val.includes("\n") || val.includes(" ") || val.includes('"') || val.includes("#") || val === "") {
+      if (
+        val.includes("\n") ||
+        val.includes(" ") ||
+        val.includes('"') ||
+        val.includes("#") ||
+        val === ""
+      ) {
         val = `"${val.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n")}"`;
       }
       lines.push(`${entry.key}=${val}`);

@@ -15,24 +15,14 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <button
-        type="button"
-        className="theme-toggle-btn"
-        aria-label="Theme: Light"
-        disabled
-      >
+      <button type="button" className="theme-toggle-btn" aria-label="Theme: Light" disabled>
         <Sun size={16} aria-hidden="true" />
         <span className="theme-toggle-label">Theme</span>
       </button>
     );
   }
 
-  const nextMode =
-    theme === "light"
-      ? "Dark"
-      : theme === "dark"
-        ? "System"
-        : "Light";
+  const nextMode = theme === "light" ? "Dark" : theme === "dark" ? "System" : "Light";
 
   const displayLabel =
     theme === "system"
@@ -41,15 +31,13 @@ export function ThemeToggle() {
         ? "Dark"
         : "Light";
 
-  const buttonText =
-    theme === "system"
-      ? "System"
-      : theme === "dark"
-        ? "Dark"
-        : "Light";
+  const buttonText = theme === "system" ? "System" : theme === "dark" ? "Dark" : "Light";
 
   return (
-    <Tooltip content={`Current: ${displayLabel}. Click to switch to ${nextMode} mode.`} side="bottom">
+    <Tooltip
+      content={`Current: ${displayLabel}. Click to switch to ${nextMode} mode.`}
+      side="bottom"
+    >
       <button
         type="button"
         className="theme-toggle-btn"
