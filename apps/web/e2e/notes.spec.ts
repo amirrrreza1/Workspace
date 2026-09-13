@@ -48,3 +48,41 @@ test("copies a fenced code block from the opened note", async ({ page }) => {
     )
     .toBe("const total = 6 * 7;\nconsole.log(total);");
 });
+
+test("keeps notes readable and touch-friendly on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+
+  await expect(
+    page.getByRole("navigation", { name: "Main Navigation" }).getByText("Notes"),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Notes" })).toHaveCSS("min-height", "44px");
+  await expect(page.getByRole("button", { name: "Add note" })).toHaveCSS("min-height", "48px");
+  await expect(page.getByLabel("Search", { exact: true })).toHaveCSS("font-size", "16px");
+  await expect(page.getByRole("button", { name: "Show filters" })).toHaveCSS("min-height", "48px");
+  await expect(page.getByText("Filters", { exact: true })).toBeVisible();
+  await expect(page.locator(".summary-card").first()).toHaveCSS("min-height", "92px");
+  await expect(page.locator(".summary-card").first().locator("span")).toHaveCSS(
+    "font-size",
+    "13px",
+  );
+  await expect(page.locator(".note-card .icon-button").first()).toHaveCSS("width", "44px");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+
+  await page.locator(".note-card", { hasText: note.title }).click();
+  const detail = page.getByRole("dialog", { name: note.title });
+  await expect(detail.locator(".note-markdown")).toHaveCSS("font-size", "16px");
+  await expect(detail.getByRole("button", { name: "Copy: typescript code" })).toHaveCSS(
+    "min-height",
+    "44px",
+  );
+
+  await detail.getByRole("button", { name: "Edit note" }).click();
+  const editor = page.getByRole("dialog", { name: "Edit note" });
+  await expect(editor.getByRole("button", { name: "Heading 1" })).toHaveCSS("width", "44px");
+  await expect(editor.getByPlaceholder("Write your note here using Markdown…")).toHaveCSS(
+    "font-size",
+    "16px",
+  );
+});
