@@ -251,3 +251,51 @@ export const projectSecrets = pgTable(
     index("project_secrets_project_env").on(table.projectId, table.environmentId),
   ],
 );
+
+export const expenseCategories = pgTable("expense_categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 80 }).notNull(),
+  color: varchar("color", { length: 30 }).notNull().default("#6366f1"),
+  icon: varchar("icon", { length: 40 }).notNull().default("tag"),
+  isDefault: boolean("is_default").notNull().default(false),
+  createdAt,
+  updatedAt,
+});
+
+export const regularExpenseItems = pgTable(
+  "regular_expense_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: varchar("title", { length: 120 }).notNull(),
+    categoryId: uuid("category_id").references(() => expenseCategories.id, {
+      onDelete: "set null",
+    }),
+    amountMinor: bigint("amount_minor", { mode: "bigint" }).notNull(),
+    currency: currency("currency").notNull().default("IRR"),
+    icon: varchar("icon", { length: 40 }),
+    createdAt,
+    updatedAt,
+  },
+  (table) => [index("regular_expense_items_category_idx").on(table.categoryId)],
+);
+
+export const expenses = pgTable(
+  "expenses",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: varchar("title", { length: 150 }).notNull(),
+    categoryId: uuid("category_id").references(() => expenseCategories.id, {
+      onDelete: "set null",
+    }),
+    amountMinor: bigint("amount_minor", { mode: "bigint" }).notNull(),
+    currency: currency("currency").notNull().default("IRR"),
+    spentAt: timestamp("spent_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    note: text("note"),
+    createdAt,
+    updatedAt,
+  },
+  (table) => [
+    index("expenses_spent_at_idx").on(table.spentAt),
+    index("expenses_category_idx").on(table.categoryId),
+  ],
+);

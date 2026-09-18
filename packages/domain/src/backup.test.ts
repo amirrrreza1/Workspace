@@ -73,6 +73,34 @@ describe("workspaceBackupSchema", () => {
           ],
         },
       ],
+      expenseCategories: [
+        {
+          id: "66666666-6666-6666-6666-666666666666",
+          name: "Snacks and food",
+          color: "#10b981",
+          icon: "utensils",
+          isDefault: true,
+        },
+      ],
+      regularExpenseItems: [
+        {
+          id: "77777777-7777-7777-7777-777777777777",
+          title: "Gasoline",
+          categoryId: "66666666-6666-6666-6666-666666666666",
+          amountMinor: "600000",
+          currency: "IRR",
+        },
+      ],
+      expenses: [
+        {
+          id: "88888888-8888-8888-8888-888888888888",
+          title: "Lunch",
+          categoryId: "66666666-6666-6666-6666-666666666666",
+          amountMinor: "150000",
+          currency: "IRR",
+          spentAt: "2026-09-15T12:00:00.000Z",
+        },
+      ],
     },
   };
 
@@ -113,6 +141,9 @@ describe("workspaceBackupSchema", () => {
         reminders: [],
         notes: [],
         projects: [],
+        expenseCategories: [],
+        regularExpenseItems: [],
+        expenses: [],
       },
     };
     const result = workspaceBackupSchema.safeParse(minimal);

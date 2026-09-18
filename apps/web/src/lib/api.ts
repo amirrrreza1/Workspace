@@ -5,6 +5,7 @@ import { getConfig } from "@reminder/config";
 import {
   BackupRepository,
   ConflictError,
+  ExpensesRepository,
   NotFoundError,
   NotificationRepository,
   NotesRepository,
@@ -13,6 +14,8 @@ import {
   SecretsRepository,
   StaleWriteError,
 } from "@reminder/db";
+
+export { NotFoundError, ConflictError, StaleWriteError } from "@reminder/db";
 
 export function repository(): ReminderRepository {
   const config = getConfig();
@@ -38,6 +41,11 @@ export function secretsRepository(): SecretsRepository {
 export function backupRepository(): BackupRepository {
   const config = getConfig();
   return new BackupRepository(config.DATABASE_URL);
+}
+
+export function expensesRepository(): ExpensesRepository {
+  const config = getConfig();
+  return new ExpensesRepository(config.DATABASE_URL);
 }
 
 export function providerStatus() {

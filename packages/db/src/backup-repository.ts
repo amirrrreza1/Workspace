@@ -174,6 +174,46 @@ export class BackupRepository {
         envsByProject.set(env.project_id, list);
       }
 
+      // 5. Expenses, Categories, Regular Items
+      const categoryRows = await sql<
+        {
+          id: string;
+          name: string;
+          color: string;
+          icon: string;
+          is_default: boolean;
+          created_at: Date;
+          updated_at: Date;
+        }[]
+      >`select id, name, color, icon, is_default, created_at, updated_at from expense_categories order by created_at asc`;
+
+      const regularItemRows = await sql<
+        {
+          id: string;
+          title: string;
+          category_id: string | null;
+          amount_minor: bigint;
+          currency: "IRR" | "USD";
+          icon: string | null;
+          created_at: Date;
+          updated_at: Date;
+        }[]
+      >`select id, title, category_id, amount_minor, currency, icon, created_at, updated_at from regular_expense_items order by created_at asc`;
+
+      const expenseRows = await sql<
+        {
+          id: string;
+          title: string;
+          category_id: string | null;
+          amount_minor: bigint;
+          currency: "IRR" | "USD";
+          spent_at: Date;
+          note: string | null;
+          created_at: Date;
+          updated_at: Date;
+        }[]
+      >`select id, title, category_id, amount_minor, currency, spent_at, note, created_at, updated_at from expenses order by spent_at asc`;
+
       const backup: WorkspaceBackup = {
         version: 1,
         exportedAt: new Date().toISOString(),
@@ -252,6 +292,36 @@ export class BackupRepository {
               }),
             };
           }),
+          expenseCategories: categoryRows.map((c) => ({
+            id: c.id,
+            name: c.name,
+            color: c.color,
+            icon: c.icon,
+            isDefault: c.is_default,
+            createdAt: iso(c.created_at),
+            updatedAt: iso(c.updated_at),
+          })),
+          regularExpenseItems: regularItemRows.map((r) => ({
+            id: r.id,
+            title: r.title,
+            categoryId: r.category_id,
+            amountMinor: r.amount_minor.toString(),
+            currency: r.currency,
+            icon: r.icon,
+            createdAt: iso(r.created_at),
+            updatedAt: iso(r.updated_at),
+          })),
+          expenses: expenseRows.map((e) => ({
+            id: e.id,
+            title: e.title,
+            categoryId: e.category_id,
+            amountMinor: e.amount_minor.toString(),
+            currency: e.currency,
+            spentAt: iso(e.spent_at),
+            note: e.note,
+            createdAt: iso(e.created_at),
+            updatedAt: iso(e.updated_at),
+          })),
         },
       };
 
@@ -265,6 +335,9 @@ export class BackupRepository {
     return this.withSql(async (sql) => {
       return await sql.begin(async (tx) => {
         // 1. Wipe existing entities in safe order (respecting foreign keys)
+        await tx`delete from expenses`;
+        await tx`delete from regular_expense_items`;
+        await tx`delete from expense_categories`;
         await tx`delete from project_secrets`;
         await tx`delete from project_environments`;
         await tx`delete from projects`;
@@ -277,6 +350,9 @@ export class BackupRepository {
         let projectsCount = 0;
         let environmentsCount = 0;
         let secretsCount = 0;
+        let expenseCategoriesCount = 0;
+        let regularExpenseItemsCount = 0;
+        let expensesCount = 0;
 
         // 2. Restore Projects, Environments, Secrets
         for (const project of backup.data.projects) {
@@ -369,7 +445,61 @@ export class BackupRepository {
           remindersCount++;
         }
 
-        // 5. Restore Settings if present
+        // 5. Restore Expense Categories
+        if (backup.data.expenseCategories) {
+          for (const cat of backup.data.expenseCategories) {
+            const catId = cat.id ?? randomUUID();
+            const cCreated = cat.createdAt ? new Date(cat.createdAt) : new Date();
+            const cUpdated = cat.updatedAt ? new Date(cat.updatedAt) : new Date();
+
+            await tx`
+              insert into expense_categories (id, name, color, icon, is_default, created_at, updated_at)
+              values (${catId}, ${cat.name}, ${cat.color}, ${cat.icon}, ${cat.isDefault}, ${cCreated}, ${cUpdated})
+            `;
+            expenseCategoriesCount++;
+          }
+        }
+
+        // 6. Restore Regular Expense Items
+        if (backup.data.regularExpenseItems) {
+          for (const item of backup.data.regularExpenseItems) {
+            const itemId = item.id ?? randomUUID();
+            const iCreated = item.createdAt ? new Date(item.createdAt) : new Date();
+            const iUpdated = item.updatedAt ? new Date(item.updatedAt) : new Date();
+
+            await tx`
+              insert into regular_expense_items (id, title, category_id, amount_minor, currency, icon, created_at, updated_at)
+              values (
+                ${itemId}, ${item.title}, ${item.categoryId ?? null},
+                ${String(item.amountMinor)}, ${item.currency},
+                ${item.icon ?? null}, ${iCreated}, ${iUpdated}
+              )
+            `;
+            regularExpenseItemsCount++;
+          }
+        }
+
+        // 7. Restore Expenses
+        if (backup.data.expenses) {
+          for (const exp of backup.data.expenses) {
+            const expId = exp.id ?? randomUUID();
+            const spentAt = new Date(exp.spentAt);
+            const eCreated = exp.createdAt ? new Date(exp.createdAt) : new Date();
+            const eUpdated = exp.updatedAt ? new Date(exp.updatedAt) : new Date();
+
+            await tx`
+              insert into expenses (id, title, category_id, amount_minor, currency, spent_at, note, created_at, updated_at)
+              values (
+                ${expId}, ${exp.title}, ${exp.categoryId ?? null},
+                ${String(exp.amountMinor)}, ${exp.currency},
+                ${spentAt}, ${exp.note ?? null}, ${eCreated}, ${eUpdated}
+              )
+            `;
+            expensesCount++;
+          }
+        }
+
+        // 8. Restore Settings if present
         if (backup.data.settings) {
           const s = backup.data.settings;
           await tx`
@@ -393,6 +523,9 @@ export class BackupRepository {
             projectsCount,
             environmentsCount,
             secretsCount,
+            expenseCategoriesCount,
+            regularExpenseItemsCount,
+            expensesCount,
           },
         };
       });

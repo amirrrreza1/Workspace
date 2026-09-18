@@ -93,6 +93,45 @@ export const backupProjectSchema = z
   })
   .strict();
 
+export const backupExpenseCategorySchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    name: z.string().min(1).max(80),
+    color: z.string().default("#6366f1"),
+    icon: z.string().default("tag"),
+    isDefault: z.boolean().default(false),
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
+  })
+  .strict();
+
+export const backupRegularExpenseItemSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    title: z.string().min(1).max(120),
+    categoryId: z.string().uuid().nullable().optional(),
+    amountMinor: z.union([z.string(), z.number(), z.bigint()]),
+    currency: z.enum(currencies).default("IRR"),
+    icon: z.string().nullable().optional(),
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
+  })
+  .strict();
+
+export const backupExpenseSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    title: z.string().min(1).max(150),
+    categoryId: z.string().uuid().nullable().optional(),
+    amountMinor: z.union([z.string(), z.number(), z.bigint()]),
+    currency: z.enum(currencies).default("IRR"),
+    spentAt: z.string(),
+    note: z.string().nullable().optional(),
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
+  })
+  .strict();
+
 export const workspaceBackupSchema = z
   .object({
     version: z.literal(1),
@@ -104,6 +143,9 @@ export const workspaceBackupSchema = z
         reminders: z.array(backupReminderSchema).default([]),
         notes: z.array(backupNoteSchema).default([]),
         projects: z.array(backupProjectSchema).default([]),
+        expenseCategories: z.array(backupExpenseCategorySchema).default([]),
+        regularExpenseItems: z.array(backupRegularExpenseItemSchema).default([]),
+        expenses: z.array(backupExpenseSchema).default([]),
       })
       .strict(),
   })
@@ -117,6 +159,9 @@ export type BackupSummary = {
   projectsCount: number;
   environmentsCount: number;
   secretsCount: number;
+  expenseCategoriesCount?: number;
+  regularExpenseItemsCount?: number;
+  expensesCount?: number;
 };
 
 export type BackupRestoreResult = {

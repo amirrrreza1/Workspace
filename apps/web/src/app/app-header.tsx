@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, FileText, KeyRound } from "lucide-react";
+import { Bell, FileText, KeyRound, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "./theme-toggle";
@@ -14,6 +14,7 @@ export function AppHeader() {
   }
 
   const isReminders = pathname === "/" || pathname?.startsWith("/reminders");
+  const isExpenses = pathname?.startsWith("/expenses");
   const isNotes = pathname?.startsWith("/notes");
   const isSecrets = pathname?.startsWith("/secrets");
 
@@ -43,6 +44,15 @@ export function AppHeader() {
           >
             <Bell aria-hidden="true" size={17} />
             <span>Reminders</span>
+          </Link>
+
+          <Link
+            href="/expenses"
+            className={`app-nav-item ${isExpenses ? "app-nav-item--active" : ""}`}
+            aria-current={isExpenses ? "page" : undefined}
+          >
+            <Wallet aria-hidden="true" size={17} />
+            <span>Expenses</span>
           </Link>
 
           <Link

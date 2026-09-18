@@ -1,5 +1,6 @@
 export * from "./backup.js";
 export * from "./calendar.js";
+export * from "./expenses.js";
 export * from "./money.js";
 export * from "./notes.js";
 export * from "./recurrence.js";
