@@ -42,11 +42,16 @@ async function main(): Promise<void> {
 
 main().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : "Migration failed";
+  const detail =
+    error && typeof error === "object" && "detail" in error ? String(error.detail) : undefined;
+  const stack = error instanceof Error ? error.stack : undefined;
   console.error(
     JSON.stringify({
       level: "error",
       event: "db.migration_failed",
       message,
+      detail,
+      stack,
     }),
   );
   process.exitCode = 1;

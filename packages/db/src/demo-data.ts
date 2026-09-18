@@ -61,7 +61,7 @@ export function createDemoBackup(masterKey = "workspace-demo-master-key"): Works
           id: randomUUID(),
           title: "Server SSL Certificate Renewal",
           description: "Automated renewal check for production & demo SSL certificates on the VPS.",
-          type: "maintenance",
+          type: "custom",
           customTypeLabel: "DevOps",
           state: "active",
           recurrenceCalendar: "gregorian",
