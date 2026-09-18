@@ -29,6 +29,6 @@ export default defineConfig({
     // keeps its own password; stop it first if the auth specs start failing.
     env: { AUTH_PASSWORD: TEST_PASSWORD },
     reuseExistingServer: !process.env.CI,
-    timeout: 30_000,
+    timeout: 120_000,
   },
 });

@@ -69,8 +69,8 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
           <p>Enter the password to open your dashboard.</p>
         </div>
 
-        <label className="field field--wide login-field" htmlFor="login-password">
-          Password
+        <div className="field field--wide login-field">
+          <label htmlFor="login-password">Password</label>
           <span className="login-input">
             <input
               id="login-password"
@@ -98,7 +98,7 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
               )}
             </button>
           </span>
-        </label>
+        </div>
 
         <Button type="submit" variant="primary" className="login-submit" disabled={pending}>
           {pending ? (

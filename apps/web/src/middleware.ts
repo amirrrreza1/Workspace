@@ -75,7 +75,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   loginUrl.pathname = "/login";
   loginUrl.search = "";
   // Preserve where they were headed so a bookmarked deep link survives the detour.
-  if (pathname !== "/") loginUrl.searchParams.set("next", `${pathname}${search}`);
+  if (pathname !== "/" || search) loginUrl.searchParams.set("next", `${pathname}${search}`);
   return NextResponse.redirect(loginUrl);
 }
 

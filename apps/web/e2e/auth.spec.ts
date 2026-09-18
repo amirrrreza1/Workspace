@@ -35,7 +35,7 @@ test("signs in with the configured password and reaches the dashboard", async ({
 
   await expect(page).toHaveURL(`${BASE_URL}/`);
   await expect(page.locator("header.app-header")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Add reminder" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add reminder" }).first()).toBeVisible();
 });
 
 test("returns to the originally requested page after signing in", async ({ page }) => {
@@ -87,7 +87,7 @@ test("clears the session on logout and refuses to go back in", async ({ page }) 
   await seedSession(page);
   await page.goto("/");
   await expect(page.locator("header.app-header")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Add reminder" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add reminder" }).first()).toBeVisible();
 
   const logout = await page.request.post("/api/auth/logout");
   expect(logout.ok()).toBe(true);

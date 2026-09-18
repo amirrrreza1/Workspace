@@ -22,7 +22,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ui": "playwright test",
+    "test:ui": "playwright test --grep-invert \"@visual\"",
     "test:visual": "playwright test --grep \"@visual\"",
     "db:migrate": "pnpm --filter @reminder/db migrate",
     "clean": "pnpm -r --if-present clean && rimraf node_modules"
