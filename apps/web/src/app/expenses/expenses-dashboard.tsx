@@ -4,25 +4,18 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
-  Calendar,
   CalendarDays,
   Check,
   ChevronLeft,
   ChevronRight,
-  CircleAlert,
-  CreditCard,
   Edit3,
-  Flame,
   Layers,
   LoaderCircle,
-  MoreHorizontal,
   PieChart,
   Plus,
   Receipt,
-  RotateCcw,
   Search,
   Settings2,
-  Tag,
   Trash2,
   Wallet,
   X,
@@ -38,7 +31,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Select,
   useToast,
 } from "@reminder/ui";
 import type {
@@ -130,9 +122,10 @@ export function ExpensesDashboard() {
   // 1. Load initial categories & regular items
   const loadMeta = useCallback(async () => {
     try {
-      const [catsRes, itemsRes] = await Promise.all([
+      const [catsRes, itemsRes, settingsRes] = await Promise.all([
         fetch("/api/v1/expenses/categories"),
         fetch("/api/v1/expenses/regular-items"),
+        fetch("/api/v1/settings"),
       ]);
 
       if (catsRes.ok) {
@@ -142,6 +135,12 @@ export function ExpensesDashboard() {
       if (itemsRes.ok) {
         const itemsData: RegularExpenseItem[] = await itemsRes.json();
         setRegularItems(itemsData);
+      }
+      if (settingsRes.ok) {
+        const settingsData = (await settingsRes.json()) as { calendarSystem?: CalendarSystem };
+        if (settingsData.calendarSystem) {
+          setCalendarSystem(settingsData.calendarSystem);
+        }
       }
     } catch {
       toast("Failed to load categories or presets.", "error");
@@ -649,6 +648,23 @@ export function ExpensesDashboard() {
             </button>
           </div>
 
+          <div className="analytics-period-toggle">
+            <button
+              type="button"
+              className={`period-toggle-btn ${calendarSystem === "jalali" ? "period-toggle-btn--active" : ""}`}
+              onClick={() => setCalendarSystem("jalali")}
+            >
+              <span>Jalali</span>
+            </button>
+            <button
+              type="button"
+              className={`period-toggle-btn ${calendarSystem === "gregorian" ? "period-toggle-btn--active" : ""}`}
+              onClick={() => setCalendarSystem("gregorian")}
+            >
+              <span>Gregorian</span>
+            </button>
+          </div>
+
           <div className="analytics-nav">
             <button
               type="button"
@@ -808,7 +824,7 @@ export function ExpensesDashboard() {
       {/* 5. Expense Transactions History */}
       <section className="expenses-history-section">
         <div className="expenses-history-header">
-          <h2>Expenses History</h2>
+          <h2>Expenses History{totalCount > 0 ? ` (${totalCount})` : ""}</h2>
 
           <div className="expenses-filter-bar">
             <div className="search-field expenses-search-field">
