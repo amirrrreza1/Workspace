@@ -15,7 +15,7 @@ const PLACEHOLDER_PASSWORDS = new Set([
   "password",
 ]);
 
-const envSchema = z.object({
+const rawEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("production"),
   APP_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   APP_BASE_URL: z.string().url(),
@@ -26,14 +26,10 @@ const envSchema = z.object({
   NOTIFICATION_MISSED_GRACE_HOURS: z.coerce.number().int().min(0).max(720).default(72),
   NOTIFICATION_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(20).default(5),
   DATABASE_URL: z.string().min(1),
-  // The single dashboard password. Required rather than optional so a deployment
-  // can never start up silently unauthenticated.
-  AUTH_PASSWORD: z
-    .string()
-    .min(8, "AUTH_PASSWORD must be at least 8 characters")
-    .refine((value) => !PLACEHOLDER_PASSWORDS.has(value.toLowerCase()), {
-      message: "AUTH_PASSWORD is still set to a placeholder value",
-    }),
+  DEMO_MODE: booleanFromEnv.default(false),
+  // The single dashboard password. In production mode, required and must not be a placeholder.
+  // In demo mode, falls back to a default demo password if omitted or set to placeholder.
+  AUTH_PASSWORD: z.string().optional().default(""),
   SECRETS_MASTER_KEY: z.string().optional().default(""),
   SMTP_HOST: z.string().optional().default(""),
   SMTP_PORT: z.coerce.number().int().min(1).max(65535).optional().default(587),
@@ -56,11 +52,46 @@ const envSchema = z.object({
   DEFAULT_TELEGRAM_ENABLED: booleanFromEnv.default(false),
 });
 
+const envSchema = rawEnvSchema
+  .superRefine((data, ctx) => {
+    if (!data.DEMO_MODE) {
+      if (!data.AUTH_PASSWORD || data.AUTH_PASSWORD.length < 8) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["AUTH_PASSWORD"],
+          message: "AUTH_PASSWORD must be at least 8 characters",
+        });
+      } else if (PLACEHOLDER_PASSWORDS.has(data.AUTH_PASSWORD.toLowerCase())) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["AUTH_PASSWORD"],
+          message: "AUTH_PASSWORD is still set to a placeholder value",
+        });
+      }
+    }
+  })
+  .transform((data) => {
+    let authPassword = data.AUTH_PASSWORD;
+    if (
+      data.DEMO_MODE &&
+      (!authPassword ||
+        authPassword.length < 8 ||
+        PLACEHOLDER_PASSWORDS.has(authPassword.toLowerCase()))
+    ) {
+      authPassword = "workspace_demo_pass";
+    }
+    return {
+      ...data,
+      AUTH_PASSWORD: authPassword,
+    };
+  });
+
 export type AppConfig = z.infer<typeof envSchema> & {
   smtpConfigured: boolean;
   telegramConfigured: boolean;
   telegramBackupConfigured: boolean;
   nerkhConfigured: boolean;
+  demoMode: boolean;
 };
 
 function isSmtpConfigured(env: z.infer<typeof envSchema>): boolean {
@@ -107,6 +138,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     telegramConfigured,
     telegramBackupConfigured,
     nerkhConfigured,
+    demoMode: parsed.data.DEMO_MODE,
   };
 }
 

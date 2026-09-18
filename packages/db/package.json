@@ -10,7 +10,8 @@
     }
   },
   "bin": {
-    "reminder-migrate": "./dist/migrate-cli.js"
+    "reminder-migrate": "./dist/migrate-cli.js",
+    "reminder-seed-demo": "./dist/seed-demo-cli.js"
   },
   "files": [
     "dist",
@@ -22,7 +23,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src --max-warnings=0",
     "clean": "rimraf dist",
-    "migrate": "tsx src/migrate-cli.ts"
+    "migrate": "tsx src/migrate-cli.ts",
+    "seed:demo": "tsx src/seed-demo-cli.ts"
   },
   "dependencies": {
     "@reminder/config": "workspace:*",

@@ -20,7 +20,13 @@ async function errorMessageFor(response: Response): Promise<string> {
   return GENERIC_ERROR;
 }
 
-export function LoginForm({ redirectTo }: { redirectTo: string }) {
+export function LoginForm({
+  redirectTo,
+  demoMode = false,
+}: {
+  redirectTo: string;
+  demoMode?: boolean;
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const [password, setPassword] = useState("");
@@ -58,6 +64,32 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
     }
   }
 
+  async function enterDemo() {
+    if (pending) return;
+    setPending(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ demo: true }),
+      });
+      if (!response.ok) {
+        const message = await errorMessageFor(response);
+        setError(message);
+        toast(message);
+        setPending(false);
+        return;
+      }
+      router.replace(redirectTo);
+      router.refresh();
+    } catch {
+      setError(GENERIC_ERROR);
+      toast(GENERIC_ERROR);
+      setPending(false);
+    }
+  }
+
   return (
     <main className="login-shell">
       <form className="login-card" onSubmit={submit}>
@@ -69,6 +101,34 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
           <p>Enter the password to open your dashboard.</p>
         </div>
 
+        {demoMode && (
+          <div className="demo-login-card">
+            <div className="demo-login-header">
+              <span className="demo-pill">⚡ Demo Mode Active</span>
+              <p>Explore this project with full interactive demo access.</p>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              className="demo-login-button"
+              onClick={enterDemo}
+              disabled={pending}
+            >
+              {pending ? (
+                <>
+                  <LoaderCircle aria-hidden="true" className="spin" size={18} />
+                  Entering demo...
+                </>
+              ) : (
+                "Explore Live Demo (1-Click)"
+              )}
+            </Button>
+            <div className="demo-divider">
+              <span>or enter password</span>
+            </div>
+          </div>
+        )}
+
         <div className="field field--wide login-field">
           <label htmlFor="login-password">Password</label>
           <span className="login-input">
@@ -79,10 +139,11 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
-              autoFocus
+              autoFocus={!demoMode}
               required
               disabled={pending}
               aria-invalid={error ? true : undefined}
+              placeholder={demoMode ? "Default: workspace_demo_pass" : undefined}
             />
             <button
               type="button"

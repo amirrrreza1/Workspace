@@ -23,6 +23,7 @@ function presentSettings<
     backupTelegramChatId: settings.backupTelegramChatId ?? (config.TELEGRAM_BACKUP_CHAT_ID || null),
     providers: providerStatus(),
     currencyConversion: currencyConversionStatus(),
+    demoMode: config.demoMode,
   };
 }
 

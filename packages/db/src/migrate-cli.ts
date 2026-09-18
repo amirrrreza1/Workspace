@@ -3,7 +3,7 @@ import "./load-root-env.js";
 
 import { loadConfig } from "@reminder/config";
 
-import { ensureSettings, runMigrations } from "./index.js";
+import { ensureSettings, isDatabaseEmpty, runMigrations, seedDemoData } from "./index.js";
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -14,12 +14,28 @@ async function main(): Promise<void> {
     emailEnabled: config.DEFAULT_EMAIL_ENABLED,
     telegramEnabled: config.DEFAULT_TELEGRAM_ENABLED,
   });
+
+  if (config.demoMode) {
+    const empty = await isDatabaseEmpty(config.DATABASE_URL);
+    if (empty) {
+      const seedResult = await seedDemoData(config.DATABASE_URL, config.SECRETS_MASTER_KEY);
+      console.log(
+        JSON.stringify({
+          level: "info",
+          event: "db.demo_data_seeded",
+          restored: seedResult.restored,
+        }),
+      );
+    }
+  }
+
   console.log(
     JSON.stringify({
       level: "info",
       event: "db.migration_completed",
       applied: result.applied,
       alreadyApplied: result.alreadyApplied,
+      demoMode: config.demoMode,
     }),
   );
 }

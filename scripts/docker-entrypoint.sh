@@ -13,8 +13,11 @@ case "$ROLE" in
   migrate)
     exec node /app/runtime/db/dist/migrate-cli.js
     ;;
+  seed-demo)
+    exec node /app/runtime/db/dist/seed-demo-cli.js
+    ;;
   *)
-    echo "Unknown role: $ROLE (expected web|worker|migrate)" >&2
+    echo "Unknown role: $ROLE (expected web|worker|migrate|seed-demo)" >&2
     exit 1
     ;;
 esac

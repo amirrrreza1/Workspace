@@ -78,4 +78,15 @@ describe("loadConfig", () => {
       /placeholder/,
     );
   });
+
+  it("allows empty or placeholder dashboard password when DEMO_MODE is true", () => {
+    resetConfigCache();
+    const config = loadConfig({
+      ...baseEnv,
+      DEMO_MODE: "true",
+      AUTH_PASSWORD: "CHANGE_ME_LOGIN_PASSWORD",
+    });
+    expect(config.demoMode).toBe(true);
+    expect(config.AUTH_PASSWORD).toBe("workspace_demo_pass");
+  });
 });

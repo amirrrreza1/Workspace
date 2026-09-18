@@ -100,11 +100,21 @@ curl --fail http://localhost:${APP_PORT:-3000}/api/health/ready
 
 Open `http://localhost:${APP_PORT}` only after `db`, `web`, and `worker` report healthy and `migrate` has exited successfully. See [Deployment](docs/DEPLOYMENT.md) for the full operational contract.
 
-**Important:** the MVP has no built-in authentication. Do not publish it unauthenticated to the public internet.
+## Demo mode (VPS deployment)
+
+To deploy a live, interactive demonstration on your VPS with 1-click login, auto-seeded sample data, simulated notification providers, and data reset capability:
+
+```bash
+cp .env.demo.example .env
+docker compose up --build -d
+```
+
+See [Demo Mode Deployment Guide](docs/DEMO_MODE.md) for domain setup, reverse proxy (Caddy / Nginx), and automatic reset cron configurations.
 
 ## Documentation
 
 - [Product specification](docs/PRODUCT_SPEC.md) — scope, behavior, requirements, and acceptance criteria
+- [Demo mode guide](docs/DEMO_MODE.md) — VPS deployment, sandbox safety, and reverse proxies
 - [Architecture](docs/ARCHITECTURE.md) — components, scheduling, reliability, security, and repository structure
 - [Data model](docs/DATA_MODEL.md) — entities, constraints, calendar behavior, and queue semantics
 - [API contract](docs/API.md) — REST resources, validation, errors, and examples

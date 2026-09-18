@@ -7,6 +7,7 @@ import {
   notificationRepository,
   requestErrorResponse,
 } from "@/lib/api";
+import { isDemoMode } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
@@ -44,6 +45,21 @@ export async function POST(request: Request, context: Context) {
       .strict()
       .parse(await jsonBody(request));
     if (body.confirmed !== true) return confirmationRequired();
+
+    if (isDemoMode()) {
+      return noStore(
+        Response.json(
+          {
+            id: `demo-${channel}-test`,
+            channel,
+            status: "sent",
+            statusUrl: `/api/v1/provider-tests/demo-${channel}-test`,
+          },
+          { status: 202 },
+        ),
+      );
+    }
+
     const test = await notificationRepository().createProviderTest(channel);
     return noStore(
       Response.json(
@@ -63,9 +79,20 @@ export async function POST(request: Request, context: Context) {
 
 export async function GET(_request: Request, context: Context) {
   try {
-    return noStore(
-      Response.json(await notificationRepository().getProviderTest((await context.params).id)),
-    );
+    const id = (await context.params).id;
+    if (isDemoMode() && id.startsWith("demo-")) {
+      return noStore(
+        Response.json({
+          id,
+          channel: id.includes("email") ? "email" : "telegram",
+          status: "sent",
+          attemptCount: 1,
+          error: null,
+        }),
+      );
+    }
+
+    return noStore(Response.json(await notificationRepository().getProviderTest(id)));
   } catch (error) {
     return errorResponse(error);
   }

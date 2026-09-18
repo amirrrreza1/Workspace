@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { safeRedirectPath } from "@/lib/auth";
+import { isDemoMode, safeRedirectPath } from "@/lib/auth";
 
 import { LoginForm } from "./login-form";
 
@@ -23,5 +23,5 @@ export default async function LoginPage({
   // navigate to, whatever was in the query string.
   const redirectTo = safeRedirectPath(typeof next === "string" ? next : null);
 
-  return <LoginForm redirectTo={redirectTo} />;
+  return <LoginForm redirectTo={redirectTo} demoMode={isDemoMode()} />;
 }

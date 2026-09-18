@@ -153,6 +153,15 @@ async function main(): Promise<void> {
   let running: Promise<void> | undefined;
 
   const processDelivery = async (delivery: ClaimedDelivery): Promise<void> => {
+    if (config.demoMode) {
+      await queue.markSent(delivery.id, WORKER_ID, {
+        providerMessageId: `demo-simulated-${delivery.id}`,
+        acceptedAt: new Date().toISOString(),
+      });
+      log("demo.notification_simulated", { deliveryId: delivery.id, channel: delivery.channel });
+      return;
+    }
+
     if (delivery.kind === "occurrence" && !queue.isWithinGrace(delivery.scheduledFor)) {
       await queue.markExpired(delivery.id, WORKER_ID);
       log("notification.expired", { deliveryId: delivery.id, channel: delivery.channel });
@@ -210,6 +219,15 @@ async function main(): Promise<void> {
   };
 
   const processNightlyBackup = async (delivery: ClaimedNightlyBackup): Promise<void> => {
+    if (config.demoMode) {
+      log("demo.backup_simulated", { backupDate: delivery.backupDate });
+      await backupQueue.markSent(delivery.backupDate, WORKER_ID, {
+        providerMessageId: `demo-simulated-backup-${delivery.backupDate}`,
+        acceptedAt: new Date().toISOString(),
+      });
+      return;
+    }
+
     try {
       const backup = await backupRepository.exportBackup();
       const timestamp = new Date()

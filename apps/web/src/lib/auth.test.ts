@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  authPassword,
   createSessionToken,
+  isDemoMode,
   isPublicPath,
   safeRedirectPath,
   secretsMatch,
@@ -123,5 +125,45 @@ describe("isPublicPath", () => {
     expect(isPublicPath("/api/v1/reminders")).toBe(false);
     expect(isPublicPath("/api/v1/notes")).toBe(false);
     expect(isPublicPath("/api/v1/secrets.png")).toBe(false);
+  });
+});
+
+describe("isDemoMode & authPassword", () => {
+  it("detects DEMO_MODE when set to true or 1", () => {
+    const original = process.env.DEMO_MODE;
+    try {
+      process.env.DEMO_MODE = "true";
+      expect(isDemoMode()).toBe(true);
+
+      process.env.DEMO_MODE = "1";
+      expect(isDemoMode()).toBe(true);
+
+      process.env.DEMO_MODE = "false";
+      expect(isDemoMode()).toBe(false);
+
+      delete process.env.DEMO_MODE;
+      expect(isDemoMode()).toBe(false);
+    } finally {
+      if (original !== undefined) process.env.DEMO_MODE = original;
+      else delete process.env.DEMO_MODE;
+    }
+  });
+
+  it("uses default demo password when in demo mode and password is empty", () => {
+    const originalDemo = process.env.DEMO_MODE;
+    const originalPass = process.env.AUTH_PASSWORD;
+    try {
+      process.env.DEMO_MODE = "true";
+      delete process.env.AUTH_PASSWORD;
+      expect(authPassword()).toBe("workspace_demo_pass");
+
+      process.env.AUTH_PASSWORD = "custom_demo_password";
+      expect(authPassword()).toBe("custom_demo_password");
+    } finally {
+      if (originalDemo !== undefined) process.env.DEMO_MODE = originalDemo;
+      else delete process.env.DEMO_MODE;
+      if (originalPass !== undefined) process.env.AUTH_PASSWORD = originalPass;
+      else delete process.env.AUTH_PASSWORD;
+    }
   });
 });

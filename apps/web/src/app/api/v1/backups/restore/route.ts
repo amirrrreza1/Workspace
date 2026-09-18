@@ -1,11 +1,28 @@
 import { workspaceBackupSchema } from "@reminder/domain";
 
 import { backupRepository, errorResponse, noStore } from "@/lib/api";
+import { isDemoMode } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    if (isDemoMode()) {
+      return noStore(
+        Response.json(
+          {
+            error: {
+              code: "DEMO_MODE_RESTRICTION",
+              message:
+                "Restoring custom backups is disabled in Demo Mode for security. Use 'Reset Demo Data' to restore the sample workspace.",
+              meta: null,
+            },
+          },
+          { status: 403 },
+        ),
+      );
+    }
+
     const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
     let payload: unknown;
 

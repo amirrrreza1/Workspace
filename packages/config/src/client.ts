@@ -6,6 +6,7 @@ export type ClientConfig = {
   telegramConfigured: boolean;
   defaultCalendarSystem: "gregorian" | "jalali";
   defaultCurrency: "IRR" | "USD";
+  demoMode: boolean;
 };
 
 export function toClientConfig(input: {
@@ -13,11 +14,13 @@ export function toClientConfig(input: {
   telegramConfigured: boolean;
   DEFAULT_CALENDAR_SYSTEM: "gregorian" | "jalali";
   DEFAULT_CURRENCY: "IRR" | "USD";
+  demoMode?: boolean;
 }): ClientConfig {
   return {
     smtpConfigured: input.smtpConfigured,
     telegramConfigured: input.telegramConfigured,
     defaultCalendarSystem: input.DEFAULT_CALENDAR_SYSTEM,
     defaultCurrency: input.DEFAULT_CURRENCY,
+    demoMode: Boolean(input.demoMode),
   };
 }

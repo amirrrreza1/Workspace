@@ -5,6 +5,7 @@ import {
   SESSION_COOKIE_NAME,
   authPassword,
   createSessionToken,
+  isDemoMode,
   secretsMatch,
   sessionCookieOptions,
 } from "@/lib/auth";
@@ -15,7 +16,10 @@ import { clientKey, recordFailure, recordSuccess, retryAfterSeconds } from "@/li
 // that would tell you about it.
 export const dynamic = "force-dynamic";
 
-const loginSchema = z.object({ password: z.string().min(1).max(512) });
+const loginSchema = z.union([
+  z.object({ password: z.string().min(1).max(512) }),
+  z.object({ demo: z.literal(true) }),
+]);
 
 function noStore(response: NextResponse): NextResponse {
   response.headers.set("Cache-Control", "private, no-store");
@@ -44,18 +48,25 @@ export async function POST(request: Request): Promise<NextResponse> {
     return response;
   }
 
-  let password: string;
+  let body: z.infer<typeof loginSchema>;
   try {
-    password = loginSchema.parse(await request.json()).password;
+    body = loginSchema.parse(await request.json());
   } catch {
-    return failure("VALIDATION_ERROR", "A password is required.", 400);
+    return failure("VALIDATION_ERROR", "A password or demo request is required.", 400);
   }
 
-  if (!(await secretsMatch(password, expected))) {
-    recordFailure(client);
-    // Same generic message either way — there is only one account, so there is
-    // nothing to enumerate, but it keeps the response shape uniform.
-    return failure("INVALID_CREDENTIALS", "That password is incorrect.", 401);
+  if ("demo" in body && body.demo === true) {
+    if (!isDemoMode()) {
+      return failure("DEMO_DISABLED", "Demo mode is not enabled on this server.", 403);
+    }
+  } else {
+    const password = "password" in body ? body.password : "";
+    if (!(await secretsMatch(password, expected))) {
+      recordFailure(client);
+      // Same generic message either way — there is only one account, so there is
+      // nothing to enumerate, but it keeps the response shape uniform.
+      return failure("INVALID_CREDENTIALS", "That password is incorrect.", 401);
+    }
   }
 
   recordSuccess(client);

@@ -1,12 +1,14 @@
-﻿import { GeistMono } from "geist/font/mono";
+import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import "@/styles/globals.css";
+import { isDemoMode } from "@/lib/auth";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { themeInitScript } from "@/lib/theme-script";
 import { AppHeader } from "./app-header";
+import { DemoBanner } from "./demo-banner";
 import { AppProviders } from "./providers";
 
 export const viewport: Viewport = {
@@ -30,6 +32,8 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  const demoMode = isDemoMode();
+
   return (
     <html
       lang="en"
@@ -43,6 +47,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ThemeProvider>
           <AppProviders>
             <AppHeader />
+            {demoMode && <DemoBanner />}
             {children}
           </AppProviders>
         </ThemeProvider>

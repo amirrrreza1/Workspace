@@ -24,6 +24,12 @@ const MAX_TOKEN_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 /** Tolerance for a client clock running slightly ahead of the server's. */
 const CLOCK_SKEW_MS = 60 * 1000;
 
+export function isDemoMode(): boolean {
+  const key = "DEMO_MODE";
+  const val = process.env[key];
+  return val === "true" || val === "1";
+}
+
 /**
  * Read AUTH_PASSWORD without letting the bundler inline it.
  *
@@ -35,7 +41,11 @@ const CLOCK_SKEW_MS = 60 * 1000;
  */
 export function authPassword(): string {
   const key = "AUTH_PASSWORD";
-  return process.env[key] ?? "";
+  const val = process.env[key] ?? "";
+  if (val.length === 0 && isDemoMode()) {
+    return "workspace_demo_pass";
+  }
+  return val;
 }
 
 function base64UrlEncode(bytes: Uint8Array): string {
