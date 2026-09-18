@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { BASE_URL, TEST_PASSWORD, seedSession } from "./auth-helpers";
 
-const passwordField = "Password";
+const passwordField = /^Password$/;
 const signInButton = "Sign in";
 
 test("sends an unauthenticated visitor to the login page", async ({ page }) => {
