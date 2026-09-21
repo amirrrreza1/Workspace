@@ -175,16 +175,13 @@ export function formatToman(minor: string | number | bigint): string {
 export function formatExpenseDate(iso: string, calendar: CalendarSystem): string {
   try {
     const date = new Date(iso);
-    return new Intl.DateTimeFormat(
-      calendar === "jalali" ? "en-US-u-ca-persian" : "en-US",
-      {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      },
-    )
+    return new Intl.DateTimeFormat(calendar === "jalali" ? "en-US-u-ca-persian" : "en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
       .format(date)
       .replace(" AP", "");
   } catch {

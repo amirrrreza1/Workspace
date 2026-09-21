@@ -31,7 +31,12 @@ import {
   Select,
   useToast,
 } from "@reminder/ui";
-import type { CalendarSystem, Expense, ExpenseCategory, RegularExpenseItem } from "@reminder/domain";
+import type {
+  CalendarSystem,
+  Expense,
+  ExpenseCategory,
+  RegularExpenseItem,
+} from "@reminder/domain";
 import {
   formatExpenseDate,
   formatToman,
@@ -249,9 +254,7 @@ export function ExpensesDashboard() {
   const openAddExpenseModal = (preset?: Partial<RegularExpenseItem>) => {
     setEditingExpense(null);
     setExpenseTitle(preset?.title ?? "");
-    setExpenseAmountToman(
-      preset?.amountMinor ? (BigInt(preset.amountMinor) / 10n).toString() : "",
-    );
+    setExpenseAmountToman(preset?.amountMinor ? (BigInt(preset.amountMinor) / 10n).toString() : "");
     setExpenseCategoryId(preset?.categoryId ?? categories[0]?.id ?? "");
 
     const now = new Date();
@@ -336,7 +339,8 @@ export function ExpensesDashboard() {
           body: JSON.stringify({
             title: newPresetTitle.trim(),
             amountMinor,
-            categoryId: newPresetCategoryId && newPresetCategoryId !== "none" ? newPresetCategoryId : null,
+            categoryId:
+              newPresetCategoryId && newPresetCategoryId !== "none" ? newPresetCategoryId : null,
             currency: "IRR",
           }),
         });
@@ -349,7 +353,8 @@ export function ExpensesDashboard() {
           body: JSON.stringify({
             title: newPresetTitle.trim(),
             amountMinor,
-            categoryId: newPresetCategoryId && newPresetCategoryId !== "none" ? newPresetCategoryId : null,
+            categoryId:
+              newPresetCategoryId && newPresetCategoryId !== "none" ? newPresetCategoryId : null,
             currency: "IRR",
           }),
         });
