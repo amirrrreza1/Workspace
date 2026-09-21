@@ -217,7 +217,8 @@ body {
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field .ui-select {
   inline-size: 100%;
   min-block-size: 2.75rem;
   padding: var(--space-2) var(--space-3);
@@ -1504,16 +1505,25 @@ body {
     margin-inline-start: 0;
     width: 100%;
     display: flex;
-    gap: var(--space-1);
+    gap: var(--space-2);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-block-end: 2px;
+  }
+
+  .app-nav::-webkit-scrollbar {
+    display: none;
   }
 
   .app-nav-item {
-    flex: 1;
+    flex: 0 0 auto;
     justify-content: center;
-    padding-inline: var(--space-2);
+    padding-inline: var(--space-3);
     font-size: 0.875rem;
     gap: var(--space-2);
-    min-height: 2.75rem;
+    min-height: 2.625rem;
     white-space: nowrap;
   }
 }
@@ -2708,7 +2718,7 @@ body {
   gap: var(--space-6);
 }
 
-.expenses-header {
+.expenses-top-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2717,44 +2727,104 @@ body {
   padding-block-end: var(--space-2);
 }
 
-.expenses-header-title {
+.expenses-header-actions {
   display: flex;
   align-items: center;
   gap: var(--space-4);
 }
 
-.expenses-header-title h1 {
-  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+.expenses-top-bar a,
+a.ui-button {
+  text-decoration: none;
+}
+
+.expenses-page-heading {
+  font-size: 1.5rem;
   font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  margin: 0;
+  color: var(--color-ink);
+  letter-spacing: -0.02em;
 }
 
-.expenses-header-title p {
-  color: var(--color-ink-muted);
-  font-size: 0.9375rem;
-  margin-block-start: 0.25rem;
-}
-
-.expenses-icon-badge {
+.expenses-month-nav {
   display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.expenses-month-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.35rem var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-weight: 750;
+  font-size: 0.9375rem;
+  color: var(--color-ink);
+  min-width: 9.5rem;
+  justify-content: center;
+}
+
+.expenses-month-summary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 640px) {
+  .expenses-month-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Hero Section: Spent Card + 3 Stacked Header Actions */
+.expenses-hero-section {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.expenses-spent-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2);
+  min-block-size: 7.5rem;
+  padding: var(--space-5) var(--space-6);
+  background: var(--color-surface);
+  border: var(--border-strong);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.expenses-spent-card strong {
+  font-size: clamp(1.4rem, 2.2vw, 2rem);
+  line-height: 1.15;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.expenses-hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  justify-content: stretch;
+}
+
+.expenses-hero-actions .ui-button,
+.expenses-hero-actions button,
+.expenses-hero-actions a {
+  flex: 1;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 3.25rem;
-  height: 3.25rem;
-  border-radius: var(--radius-card);
-  background: var(--color-surface-raised);
-  border: var(--border-strong);
-  box-shadow: var(--shadow-control);
-  color: var(--color-brand, #10b981);
-  flex-shrink: 0;
-}
-
-.expenses-header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
+  width: 100%;
+  min-height: 2.5rem;
+  text-decoration: none;
+  box-sizing: border-box;
 }
 
 /* Fast-Add Regular Items Bar */
@@ -2772,6 +2842,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-2);
+  min-width: 0;
   font-size: 0.8125rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -2783,6 +2855,8 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .expenses-presets-manage-link {
@@ -2797,6 +2871,8 @@ body {
   cursor: pointer;
   padding: 0.2rem 0.5rem;
   border-radius: var(--radius-control);
+  white-space: nowrap;
+  flex-shrink: 0;
   transition:
     color 0.15s,
     background-color 0.15s;
@@ -2825,6 +2901,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  max-width: 100%;
+  min-width: 0;
   background: var(--color-surface-raised);
   border: var(--border-strong);
   border-radius: 999px;
@@ -2858,11 +2936,16 @@ body {
 
 .quick-chip-title {
   font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .quick-chip-price {
   color: var(--color-ink-muted);
   font-size: 0.8125rem;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .quick-chip-toman {
@@ -2948,33 +3031,40 @@ body {
   display: flex;
   align-items: center;
   background: var(--color-surface-raised);
-  border: var(--border-strong);
-  border-radius: var(--radius-control);
-  padding: 0.25rem;
-  gap: 0.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 3px;
 }
 
 .period-toggle-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.4rem 0.85rem;
-  border-radius: calc(var(--radius-control) - 2px);
-  border: 0;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
   background: transparent;
   color: var(--color-ink-muted);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   cursor: pointer;
   transition:
-    background-color 0.15s,
-    color 0.15s;
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.period-toggle-btn:hover {
+  color: var(--color-ink);
 }
 
 .period-toggle-btn--active {
   background: var(--color-surface);
   color: var(--color-ink);
-  box-shadow: var(--shadow-control);
+  border-color: var(--color-border-subtle);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .analytics-nav {
@@ -2989,16 +3079,18 @@ body {
   justify-content: center;
   width: 2.25rem;
   height: 2.25rem;
-  border: var(--border-strong);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
-  background: var(--color-surface-raised);
+  background: var(--color-surface);
   color: var(--color-ink);
   cursor: pointer;
-  transition: border-color 0.12s;
+  transition: border-color 0.12s, background-color 0.12s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .analytics-nav-btn:hover {
-  border-color: var(--color-accent);
+  border-color: var(--color-ink);
+  background: var(--color-surface-raised);
 }
 
 .analytics-current-label {
@@ -3018,15 +3110,18 @@ body {
   padding: 0.35rem 0.75rem;
   font-size: 0.8125rem;
   font-weight: 700;
-  border: var(--border-strong);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
-  background: var(--color-surface-raised);
+  background: var(--color-surface);
   color: var(--color-ink);
   cursor: pointer;
+  transition: border-color 0.12s, background-color 0.12s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .analytics-today-btn:hover {
-  border-color: var(--color-accent);
+  border-color: var(--color-ink);
+  background: var(--color-surface-raised);
 }
 
 .expenses-chart-loading {
@@ -3347,6 +3442,22 @@ body {
   color: var(--color-ink);
 }
 
+.cat-select-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.expenses-category-select-wrapper {
+  min-width: 11rem;
+}
+
+.expenses-category-select-wrapper .ui-select {
+  width: 100%;
+  min-block-size: 2.5rem;
+}
+
 .expenses-select {
   height: 2.5rem;
   padding-inline: var(--space-3);
@@ -3481,6 +3592,148 @@ body {
 
 .expenses-empty-state {
   margin-inline: auto;
+}
+
+/* Responsive visibility for expenses transactions */
+.expenses-desktop-view {
+  display: block;
+}
+
+.expenses-mobile-view,
+.expenses-cards-grid {
+  display: none !important;
+}
+
+/* Expenses Transaction Cards Grid & Card */
+.expenses-cards-grid {
+  gap: var(--space-4);
+}
+
+.expense-card {
+  background: var(--color-surface);
+  border: var(--border-strong);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  min-height: 9.5rem;
+  position: relative;
+  transition:
+    transform var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+.expense-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 10px 10px 0 var(--color-shadow);
+}
+
+.expense-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.expense-card-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: var(--color-surface-raised);
+  border: 1.5px solid var(--color-ink);
+  color: var(--color-ink);
+  max-width: 72%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.expense-card-category span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.expense-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.expense-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.expense-card-title {
+  font-size: 1.125rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--color-ink);
+  margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.expense-card-note {
+  font-size: 0.8125rem;
+  color: var(--color-ink-muted);
+  line-height: 1.4;
+  margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.expense-card-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1.5px dashed var(--color-border-subtle);
+  flex-wrap: wrap;
+}
+
+.expense-card-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.expense-card-amount-val {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-ink);
+  letter-spacing: -0.01em;
+}
+
+.expense-card-currency {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-ink-muted);
+  text-transform: uppercase;
+}
+
+.expense-card-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--color-ink-muted);
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 /* Modals & Forms */
@@ -3632,6 +3885,214 @@ body {
 
   .expenses-summary-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .expenses-desktop-view,
+  .expenses-table-card.expenses-desktop-view {
+    display: none !important;
+  }
+
+  .expenses-mobile-view,
+  .expenses-cards-grid {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+}
+
+@media (max-width: 640px) {
+  .expenses-hero-section {
+    grid-template-columns: 1fr;
+  }
+
+  .expenses-hero-actions {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .expenses-hero-actions .ui-button,
+  .expenses-hero-actions button,
+  .expenses-hero-actions a {
+    min-height: 2.75rem;
+  }
+
+  .expenses-top-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .expenses-month-controls {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: var(--space-2);
+  }
+
+  .expenses-month-nav {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: var(--space-2);
+  }
+
+  .expenses-month-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.9375rem;
+    padding: 0.4rem 0.5rem;
+    gap: 0.35rem;
+  }
+
+  .expenses-month-subcode {
+    display: none;
+  }
+
+  .expenses-header-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+  }
+
+  .expenses-header-actions .ui-button,
+  .expenses-header-actions a {
+    justify-content: center;
+    min-height: 2.75rem;
+  }
+
+  .expenses-header-actions .ui-button--primary {
+    grid-column: 1 / -1;
+    min-height: 3rem;
+    font-size: 1rem;
+  }
+
+  .expenses-quick-bar {
+    padding: var(--space-3) var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .expenses-quick-bar-label-sub {
+    display: none;
+  }
+
+  .expenses-quick-chips {
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    overflow-x: visible;
+  }
+
+  .expenses-quick-chip {
+    flex: 0 1 auto;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8125rem;
+    gap: 0.35rem;
+  }
+
+  .quick-chip-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+  }
+
+  .quick-chip-price {
+    font-size: 0.75rem;
+  }
+
+  .expenses-history-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .expenses-filter-bar {
+    flex-direction: column;
+    width: 100%;
+    gap: var(--space-2);
+  }
+
+  .expenses-search-field {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .expenses-category-select-wrapper {
+    width: 100%;
+  }
+
+  .expenses-category-select-wrapper .ui-select {
+    width: 100%;
+  }
+
+  .expenses-select {
+    width: 100%;
+  }
+
+  .expenses-cards-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .expense-card {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .expenses-table-card {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .expenses-table {
+    min-width: 36rem;
+  }
+
+  /* Reports page mobile styles */
+  .analytics-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .analytics-period-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .period-toggle-btn {
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .analytics-nav {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .analytics-current-label {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.875rem;
+    padding-inline: var(--space-2);
+    text-align: center;
+  }
+
+  .bar-chart-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: var(--space-2);
+  }
+
+  .bar-chart-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bar-chart-container {
+    min-width: 28rem;
   }
 }
 

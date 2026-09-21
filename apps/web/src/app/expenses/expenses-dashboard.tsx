@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   BarChart3,
   CalendarDays,
   Check,
@@ -11,16 +9,15 @@ import {
   Edit3,
   Layers,
   LoaderCircle,
-  PieChart,
   Plus,
   Receipt,
   Search,
   Settings2,
   Trash2,
-  Wallet,
   X,
   Zap,
 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
@@ -31,16 +28,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Select,
   useToast,
 } from "@reminder/ui";
-import type {
-  CalendarSystem,
-  Expense,
-  ExpenseCategory,
-  ExpensePeriodType,
-  ExpenseReportSummary,
-  RegularExpenseItem,
-} from "@reminder/domain";
+import type { CalendarSystem, Expense, ExpenseCategory, RegularExpenseItem } from "@reminder/domain";
+import {
+  formatExpenseDate,
+  formatToman,
+  getMonthBounds,
+  navigateMonth,
+} from "@/lib/expenses-month";
+
+export { formatExpenseDate, formatToman };
 
 // Quick color palette options for categories
 const COLOR_PALETTE = [
@@ -56,48 +55,37 @@ const COLOR_PALETTE = [
   "#e11d48", // Crimson
 ];
 
-// Helper to format IRR amounts nicely
-export function formatIRR(minor: string | number | bigint): string {
-  const num = typeof minor === "bigint" ? minor : BigInt(String(minor || "0"));
-  return num.toLocaleString("en-US");
-}
-
-export function formatToman(minor: string | number | bigint): string {
-  const num = typeof minor === "bigint" ? minor : BigInt(String(minor || "0"));
-  const toman = num / 10n;
-  return toman.toLocaleString("en-US");
-}
-
 export function ExpensesDashboard() {
   const { toast } = useToast();
 
   // Data state
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [monthTotalMinor, setMonthTotalMinor] = useState("0");
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [regularItems, setRegularItems] = useState<RegularExpenseItem[]>([]);
-  const [report, setReport] = useState<ExpenseReportSummary | null>(null);
 
-  // Filter & Navigation state
-  const [period, setPeriod] = useState<ExpensePeriodType>("week");
+  // Filter & Navigation state (calendarSystem comes from settings / .env)
   const [refDate, setRefDate] = useState<Date>(new Date());
   const [calendarSystem, setCalendarSystem] = useState<CalendarSystem>("jalali");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
+  // Computed month bounds
+  const monthBounds = useMemo(
+    () => getMonthBounds(refDate, calendarSystem),
+    [refDate, calendarSystem],
+  );
+
   // Loading state
   const [loading, setLoading] = useState(true);
-  const [reportLoading, setReportLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  // Active chart hover state
-  const [hoveredDayIndex, setHoveredDayIndex] = useState<number | null>(null);
 
   // Modals
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [expenseTitle, setExpenseTitle] = useState("");
-  const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenseAmountToman, setExpenseAmountToman] = useState("");
   const [expenseCategoryId, setExpenseCategoryId] = useState("");
   const [expenseSpentAt, setExpenseSpentAt] = useState("");
   const [expenseNote, setExpenseNote] = useState("");
@@ -109,7 +97,7 @@ export function ExpensesDashboard() {
 
   const [regularItemModalOpen, setRegularItemModalOpen] = useState(false);
   const [newPresetTitle, setNewPresetTitle] = useState("");
-  const [newPresetAmount, setNewPresetAmount] = useState("");
+  const [newPresetAmountToman, setNewPresetAmountToman] = useState("");
   const [newPresetCategoryId, setNewPresetCategoryId] = useState("");
   const [editingPreset, setEditingPreset] = useState<RegularExpenseItem | null>(null);
 
@@ -119,7 +107,7 @@ export function ExpensesDashboard() {
     title: string;
   } | null>(null);
 
-  // 1. Load initial categories & regular items
+  // 1. Load initial categories, regular items, and calendar settings
   const loadMeta = useCallback(async () => {
     try {
       const [catsRes, itemsRes, settingsRes] = await Promise.all([
@@ -147,32 +135,15 @@ export function ExpensesDashboard() {
     }
   }, [toast]);
 
-  // 2. Load report data
-  const loadReport = useCallback(async () => {
-    setReportLoading(true);
-    try {
-      const dateStr = refDate.toISOString().slice(0, 10);
-      const res = await fetch(
-        `/api/v1/expenses/reports?period=${period}&date=${dateStr}&calendar=${calendarSystem}`,
-      );
-      if (res.ok) {
-        const data: ExpenseReportSummary = await res.json();
-        setReport(data);
-      }
-    } catch {
-      toast("Failed to load expense report.", "error");
-    } finally {
-      setReportLoading(false);
-    }
-  }, [period, refDate, calendarSystem, toast]);
-
-  // 3. Load expenses list
+  // 2. Load expenses list for active month
   const loadExpenses = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (searchQuery.trim()) params.set("q", searchQuery.trim());
       if (categoryFilter && categoryFilter !== "all") params.set("categoryId", categoryFilter);
+      params.set("startDate", monthBounds.startDate.toISOString());
+      params.set("endDate", monthBounds.endDate.toISOString());
       params.set("limit", "100");
 
       const res = await fetch(`/api/v1/expenses?${params.toString()}`);
@@ -181,21 +152,18 @@ export function ExpensesDashboard() {
           await res.json();
         setExpenses(data.items);
         setTotalCount(data.totalCount);
+        setMonthTotalMinor(data.totalAmountMinor);
       }
     } catch {
       toast("Failed to load expenses list.", "error");
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, categoryFilter, toast]);
+  }, [searchQuery, categoryFilter, monthBounds, toast]);
 
   useEffect(() => {
     loadMeta();
   }, [loadMeta]);
-
-  useEffect(() => {
-    loadReport();
-  }, [loadReport]);
 
   useEffect(() => {
     loadExpenses();
@@ -218,37 +186,34 @@ export function ExpensesDashboard() {
 
       if (!res.ok) throw new Error();
 
-      toast(
-        `Added ${item.title} (${formatIRR(item.amountMinor)} IRR / ${formatToman(item.amountMinor)} Toman)`,
-        "success",
-      );
+      toast(`Added ${item.title} (${formatToman(item.amountMinor)} Toman)`, "success");
       loadExpenses();
-      loadReport();
     } catch {
       toast(`Failed to record ${item.title}.`, "error");
     }
   };
 
-  // Save Expense (Add or Edit)
+  // Save Expense (Add or Edit) - input in Toman, saved in minor units (1 Toman = 10 minor)
   const handleSaveExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!expenseTitle.trim()) {
       toast("Title cannot be empty.", "error");
       return;
     }
-    const cleanAmount = expenseAmount.trim().replaceAll(",", "").replaceAll(" ", "");
-    if (!cleanAmount || !/^\d+$/.test(cleanAmount)) {
-      toast("Please enter a valid IRR amount (numbers only).", "error");
+    const cleanToman = expenseAmountToman.trim().replaceAll(",", "").replaceAll(" ", "");
+    if (!cleanToman || !/^\d+$/.test(cleanToman)) {
+      toast("Please enter a valid amount in Toman (numbers only).", "error");
       return;
     }
 
     setSubmitting(true);
     try {
+      const amountMinor = (BigInt(cleanToman) * 10n).toString();
       const payload = {
         title: expenseTitle.trim(),
-        amountMinor: cleanAmount,
+        amountMinor,
         currency: "IRR" as const,
-        categoryId: expenseCategoryId || null,
+        categoryId: expenseCategoryId && expenseCategoryId !== "none" ? expenseCategoryId : null,
         spentAt: expenseSpentAt ? new Date(expenseSpentAt).toISOString() : new Date().toISOString(),
         note: expenseNote.trim() || null,
       };
@@ -274,7 +239,6 @@ export function ExpensesDashboard() {
       setExpenseModalOpen(false);
       setEditingExpense(null);
       loadExpenses();
-      loadReport();
     } catch {
       toast("Failed to save expense.", "error");
     } finally {
@@ -285,9 +249,11 @@ export function ExpensesDashboard() {
   const openAddExpenseModal = (preset?: Partial<RegularExpenseItem>) => {
     setEditingExpense(null);
     setExpenseTitle(preset?.title ?? "");
-    setExpenseAmount(preset?.amountMinor ?? "");
+    setExpenseAmountToman(
+      preset?.amountMinor ? (BigInt(preset.amountMinor) / 10n).toString() : "",
+    );
     setExpenseCategoryId(preset?.categoryId ?? categories[0]?.id ?? "");
-    // Default to current local time in YYYY-MM-DDTHH:mm
+
     const now = new Date();
     const offset = now.getTimezoneOffset() * 60000;
     const localISOTime = new Date(now.getTime() - offset).toISOString().slice(0, 16);
@@ -299,7 +265,7 @@ export function ExpensesDashboard() {
   const openEditExpenseModal = (exp: Expense) => {
     setEditingExpense(exp);
     setExpenseTitle(exp.title);
-    setExpenseAmount(exp.amountMinor);
+    setExpenseAmountToman((BigInt(exp.amountMinor) / 10n).toString());
     setExpenseCategoryId(exp.categoryId ?? "");
     const d = new Date(exp.spentAt);
     const offset = d.getTimezoneOffset() * 60000;
@@ -340,7 +306,6 @@ export function ExpensesDashboard() {
       setEditingCategory(null);
       loadMeta();
       loadExpenses();
-      loadReport();
     } catch {
       toast("Failed to save category.", "error");
     } finally {
@@ -348,29 +313,30 @@ export function ExpensesDashboard() {
     }
   };
 
-  // Save Regular Item Preset
+  // Save Regular Item Preset - input in Toman, saved in minor units
   const handleSavePreset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPresetTitle.trim()) {
       toast("Title cannot be empty.", "error");
       return;
     }
-    const cleanAmount = newPresetAmount.trim().replaceAll(",", "").replaceAll(" ", "");
-    if (!cleanAmount || !/^\d+$/.test(cleanAmount)) {
-      toast("Please enter a valid IRR amount.", "error");
+    const cleanToman = newPresetAmountToman.trim().replaceAll(",", "").replaceAll(" ", "");
+    if (!cleanToman || !/^\d+$/.test(cleanToman)) {
+      toast("Please enter a valid amount in Toman.", "error");
       return;
     }
 
     setSubmitting(true);
     try {
+      const amountMinor = (BigInt(cleanToman) * 10n).toString();
       if (editingPreset) {
         const res = await fetch(`/api/v1/expenses/regular-items/${editingPreset.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             title: newPresetTitle.trim(),
-            amountMinor: cleanAmount,
-            categoryId: newPresetCategoryId || null,
+            amountMinor,
+            categoryId: newPresetCategoryId && newPresetCategoryId !== "none" ? newPresetCategoryId : null,
             currency: "IRR",
           }),
         });
@@ -382,8 +348,8 @@ export function ExpensesDashboard() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             title: newPresetTitle.trim(),
-            amountMinor: cleanAmount,
-            categoryId: newPresetCategoryId || null,
+            amountMinor,
+            categoryId: newPresetCategoryId && newPresetCategoryId !== "none" ? newPresetCategoryId : null,
             currency: "IRR",
           }),
         });
@@ -391,7 +357,7 @@ export function ExpensesDashboard() {
         toast("Preset created!", "success");
       }
       setNewPresetTitle("");
-      setNewPresetAmount("");
+      setNewPresetAmountToman("");
       setEditingPreset(null);
       loadMeta();
     } catch {
@@ -410,13 +376,11 @@ export function ExpensesDashboard() {
         await fetch(`/api/v1/expenses/${deleteTarget.id}`, { method: "DELETE" });
         toast("Expense deleted.", "success");
         loadExpenses();
-        loadReport();
       } else if (deleteTarget.type === "category") {
         await fetch(`/api/v1/expenses/categories/${deleteTarget.id}`, { method: "DELETE" });
         toast("Category deleted and items moved to Others.", "success");
         loadMeta();
         loadExpenses();
-        loadReport();
       } else if (deleteTarget.type === "regularItem") {
         await fetch(`/api/v1/expenses/regular-items/${deleteTarget.id}`, { method: "DELETE" });
         toast("Preset removed.", "success");
@@ -430,105 +394,50 @@ export function ExpensesDashboard() {
     }
   };
 
-  // Period Navigation
-  const navigatePeriod = (direction: "prev" | "next" | "today") => {
-    if (direction === "today") {
-      setRefDate(new Date());
-      return;
-    }
-
-    const next = new Date(refDate);
-    if (period === "week") {
-      const delta = direction === "prev" ? -7 : 7;
-      next.setUTCDate(refDate.getUTCDate() + delta);
-    } else {
-      const delta = direction === "prev" ? -1 : 1;
-      next.setUTCMonth(refDate.getUTCMonth() + delta);
-    }
-    setRefDate(next);
+  // Navigate month
+  const handleNavigateMonth = (direction: "prev" | "next" | "today") => {
+    const nextDate = navigateMonth(refDate, calendarSystem, direction);
+    setRefDate(nextDate);
   };
-
-  // Chart computation helpers
-  const maxDayAmount = useMemo(() => {
-    if (!report?.dailyBreakdown?.length) return 1n;
-    let max = 1n;
-    for (const d of report.dailyBreakdown) {
-      const val = BigInt(d.amountMinor || "0");
-      if (val > max) max = val;
-    }
-    return max;
-  }, [report]);
-
-  // Donut chart SVG calculations
-  const donutSlices = useMemo(() => {
-    if (!report?.categoryBreakdown?.length || BigInt(report.totalMinor || "0") === 0n) {
-      return [];
-    }
-    const total = BigInt(report.totalMinor);
-    let cumulativePercent = 0;
-
-    return report.categoryBreakdown.map((cat) => {
-      const amt = BigInt(cat.amountMinor || "0");
-      const ratio = Number(amt) / Number(total);
-      const startAngle = cumulativePercent * 360;
-      cumulativePercent += ratio;
-      const endAngle = cumulativePercent * 360;
-
-      // Calculate SVG arc path
-      const startRad = ((startAngle - 90) * Math.PI) / 180;
-      const endRad = ((endAngle - 90) * Math.PI) / 180;
-      const x1 = 100 + 70 * Math.cos(startRad);
-      const y1 = 100 + 70 * Math.sin(startRad);
-      const x2 = 100 + 70 * Math.cos(endRad);
-      const y2 = 100 + 70 * Math.sin(endRad);
-
-      const largeArc = endAngle - startAngle > 180 ? 1 : 0;
-      const pathData = `M 100 100 L ${x1} ${y1} A 70 70 0 ${largeArc} 1 ${x2} ${y2} Z`;
-
-      return {
-        ...cat,
-        pathData,
-        percentage: Math.round(ratio * 100),
-      };
-    });
-  }, [report]);
 
   return (
     <main className="app-main expenses-page">
-      {/* 1. Header & Hero */}
-      <header className="expenses-header">
-        <div className="expenses-header-title">
-          <div className="expenses-icon-badge">
-            <Wallet size={24} />
-          </div>
-          <div>
-            <h1>Financial Expenses</h1>
-            <p>
-              Track your spending, manage regular expenses, and review weekly & monthly reports in
-              IRR.
-            </p>
+      {/* 1. Hero Section: Spent Card and Action Buttons Stacked in Front */}
+      <section className="expenses-hero-section">
+        <div className="expenses-spent-card">
+          <span className="type-label">Spent in {monthBounds.label}</span>
+          <strong>{formatToman(monthTotalMinor)} Toman</strong>
+          <div className="expenses-metric-sub">
+            <span>{totalCount} transactions recorded</span>
           </div>
         </div>
 
-        <div className="expenses-header-actions">
+        <div className="expenses-hero-actions">
+          <Button variant="primary" onClick={() => openAddExpenseModal()}>
+            <Plus size={16} />
+            <span>Add Expense</span>
+          </Button>
+
           <Button variant="secondary" onClick={() => setCategoryModalOpen(true)}>
             <Layers size={16} />
             <span>Manage Categories</span>
           </Button>
 
-          <Button variant="primary" onClick={() => openAddExpenseModal()}>
-            <Plus size={16} />
-            <span>Add Expense</span>
-          </Button>
+          <Link href="/expenses/reports" className="ui-button ui-button--secondary">
+            <BarChart3 size={16} />
+            <span>Reports</span>
+          </Link>
         </div>
-      </header>
+      </section>
 
       {/* 2. Fast-Add Regular Items Bar */}
       <section className="expenses-quick-bar" aria-label="Regular Items Quick Add">
         <div className="expenses-quick-bar-header">
           <div className="expenses-quick-bar-label">
             <Zap size={16} className="text-accent" />
-            <span>Quick Add Regular Items</span>
+            <span>
+              Quick Add <span className="expenses-quick-bar-label-sub">Regular Items</span>
+            </span>
           </div>
           <button
             type="button"
@@ -553,280 +462,25 @@ export function ExpensesDashboard() {
                 type="button"
                 className="expenses-quick-chip"
                 onClick={() => handleQuickAdd(item)}
-                title={`Click to quickly add ${item.title} (${formatIRR(item.amountMinor)} IRR)`}
+                title={`Click to quickly add ${item.title} (${formatToman(item.amountMinor)} Toman)`}
               >
                 <span
                   className="quick-chip-dot"
                   style={{ backgroundColor: item.categoryColor || "#64748b" }}
                 />
                 <span className="quick-chip-title">+{item.title}</span>
-                <span className="quick-chip-price">{formatIRR(item.amountMinor)} IRR</span>
-                <span className="quick-chip-toman">({formatToman(item.amountMinor)} T)</span>
+                <span className="quick-chip-price">{formatToman(item.amountMinor)} Toman</span>
               </button>
             ))
           )}
         </div>
       </section>
 
-      {/* 3. Metrics Summary Cards */}
-      <section className="summary-grid expenses-summary-grid">
-        <div className="summary-card">
-          <span className="type-label">
-            {period === "week" ? "This Week's Spending" : "This Month's Spending"}
-          </span>
-          <strong>{formatIRR(report?.totalMinor ?? "0")} IRR</strong>
-          <div className="expenses-metric-sub">
-            <span>{formatToman(report?.totalMinor ?? "0")} Toman</span>
-            {report?.changePercentage !== null && report?.changePercentage !== undefined && (
-              <span
-                className={`metric-change ${report.changePercentage >= 0 ? "metric-change--up" : "metric-change--down"}`}
-              >
-                {report.changePercentage >= 0 ? (
-                  <ArrowUpRight size={14} />
-                ) : (
-                  <ArrowDownRight size={14} />
-                )}
-                {Math.abs(report.changePercentage)}% vs last {period}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="summary-card">
-          <span className="type-label">Daily Average</span>
-          <strong>{formatIRR(report?.dailyAverageMinor ?? "0")} IRR</strong>
-          <div className="expenses-metric-sub">
-            <span>{formatToman(report?.dailyAverageMinor ?? "0")} Toman / day</span>
-          </div>
-        </div>
-
-        <div className="summary-card">
-          <span className="type-label">Top Category</span>
-          {report?.highestCategory ? (
-            <>
-              <div className="highest-cat-row">
-                <span
-                  className="cat-color-badge"
-                  style={{ backgroundColor: report.highestCategory.color }}
-                />
-                <strong className="highest-cat-name">{report.highestCategory.name}</strong>
-              </div>
-              <div className="expenses-metric-sub">
-                <span>{formatIRR(report.highestCategory.amountMinor)} IRR</span>
-              </div>
-            </>
-          ) : (
-            <>
-              <strong>None yet</strong>
-              <div className="expenses-metric-sub">
-                <span>No spending recorded</span>
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* 4. Reporting & Interactive Charts Section */}
-      <section className="expenses-analytics-card">
-        <div className="analytics-toolbar">
-          <div className="analytics-period-toggle">
-            <button
-              type="button"
-              className={`period-toggle-btn ${period === "week" ? "period-toggle-btn--active" : ""}`}
-              onClick={() => setPeriod("week")}
-            >
-              <BarChart3 size={15} />
-              <span>Weekly Report</span>
-            </button>
-            <button
-              type="button"
-              className={`period-toggle-btn ${period === "month" ? "period-toggle-btn--active" : ""}`}
-              onClick={() => setPeriod("month")}
-            >
-              <PieChart size={15} />
-              <span>Monthly Report</span>
-            </button>
-          </div>
-
-          <div className="analytics-period-toggle">
-            <button
-              type="button"
-              className={`period-toggle-btn ${calendarSystem === "jalali" ? "period-toggle-btn--active" : ""}`}
-              onClick={() => setCalendarSystem("jalali")}
-            >
-              <span>Jalali</span>
-            </button>
-            <button
-              type="button"
-              className={`period-toggle-btn ${calendarSystem === "gregorian" ? "period-toggle-btn--active" : ""}`}
-              onClick={() => setCalendarSystem("gregorian")}
-            >
-              <span>Gregorian</span>
-            </button>
-          </div>
-
-          <div className="analytics-nav">
-            <button
-              type="button"
-              className="analytics-nav-btn"
-              onClick={() => navigatePeriod("prev")}
-              title="Previous period"
-            >
-              <ChevronLeft size={18} />
-            </button>
-
-            <span className="analytics-current-label">
-              <CalendarDays size={15} />
-              <strong>{report?.periodLabel || "Loading..."}</strong>
-            </span>
-
-            <button
-              type="button"
-              className="analytics-nav-btn"
-              onClick={() => navigatePeriod("next")}
-              title="Next period"
-            >
-              <ChevronRight size={18} />
-            </button>
-
-            <button
-              type="button"
-              className="analytics-today-btn"
-              onClick={() => navigatePeriod("today")}
-              title="Current period"
-            >
-              Today
-            </button>
-          </div>
-        </div>
-
-        {reportLoading ? (
-          <div className="expenses-chart-loading">
-            <LoaderCircle size={28} className="spin" />
-            <span>Loading analytics...</span>
-          </div>
-        ) : (
-          <div className="analytics-charts-grid">
-            {/* Day-by-Day Bar Chart */}
-            <div className="chart-panel">
-              <div className="chart-panel-header">
-                <h3>Daily Spending Trend</h3>
-                <span className="chart-panel-sub">
-                  {report?.transactionCount ?? 0} transactions
-                </span>
-              </div>
-
-              {report?.dailyBreakdown && report.dailyBreakdown.length > 0 ? (
-                <div className="bar-chart-wrapper">
-                  <div className="bar-chart-container">
-                    {report.dailyBreakdown.map((item, idx) => {
-                      const amt = BigInt(item.amountMinor || "0");
-                      const heightPercent =
-                        maxDayAmount > 0n ? Math.max(4, Number((amt * 100n) / maxDayAmount)) : 4;
-                      const isHovered = hoveredDayIndex === idx;
-
-                      return (
-                        <div
-                          key={item.date}
-                          className="bar-col"
-                          onMouseEnter={() => setHoveredDayIndex(idx)}
-                          onMouseLeave={() => setHoveredDayIndex(null)}
-                        >
-                          <div className="bar-track">
-                            <div
-                              className={`bar-fill ${amt > 0n ? "bar-fill--active" : ""} ${isHovered ? "bar-fill--hover" : ""}`}
-                              style={{ height: `${amt > 0n ? heightPercent : 2}%` }}
-                            />
-                            {isHovered && amt > 0n && (
-                              <div className="bar-tooltip">
-                                <strong>{formatIRR(item.amountMinor)} IRR</strong>
-                                <span>{formatToman(item.amountMinor)} Toman</span>
-                                <small>
-                                  {item.count} {item.count === 1 ? "expense" : "expenses"}
-                                </small>
-                              </div>
-                            )}
-                          </div>
-                          <span className="bar-label">{item.dayLabel}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div className="chart-empty">No daily data available for this period.</div>
-              )}
-            </div>
-
-            {/* Category Breakdown Donut & Rank */}
-            <div className="chart-panel">
-              <div className="chart-panel-header">
-                <h3>Category Breakdown</h3>
-                <span className="chart-panel-sub">By total amount</span>
-              </div>
-
-              {donutSlices.length > 0 ? (
-                <div className="donut-and-list">
-                  <div className="donut-chart-box">
-                    <svg viewBox="0 0 200 200" className="donut-svg">
-                      {donutSlices.map((slice) => (
-                        <path
-                          key={slice.categoryName}
-                          d={slice.pathData}
-                          fill={slice.color}
-                          className="donut-slice"
-                        >
-                          <title>{`${slice.categoryName}: ${formatIRR(slice.amountMinor)} IRR (${slice.percentage}%)`}</title>
-                        </path>
-                      ))}
-                      {/* Center hole cutout for donut effect */}
-                      <circle cx="100" cy="100" r="46" className="donut-center-cutout" />
-                    </svg>
-                    <div className="donut-center-text">
-                      <span className="donut-center-sub">Total</span>
-                      <strong>{formatIRR(report?.totalMinor ?? "0")}</strong>
-                      <span className="donut-center-curr">IRR</span>
-                    </div>
-                  </div>
-
-                  <div className="category-rank-list">
-                    {report?.categoryBreakdown.map((cat) => (
-                      <div key={cat.categoryId ?? cat.categoryName} className="category-rank-item">
-                        <div className="category-rank-meta">
-                          <span className="cat-color-dot" style={{ backgroundColor: cat.color }} />
-                          <span className="category-rank-title">{cat.categoryName}</span>
-                          <span className="category-rank-count">({cat.count})</span>
-                          <span className="category-rank-amount">
-                            {formatIRR(cat.amountMinor)} IRR
-                          </span>
-                        </div>
-                        <div className="category-progress-track">
-                          <div
-                            className="category-progress-fill"
-                            style={{
-                              width: `${cat.percentage}%`,
-                              backgroundColor: cat.color,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="chart-empty">No category spending recorded in this period.</div>
-              )}
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* 5. Expense Transactions History */}
+      {/* 3. Monthly Expenses Transactions History (Search, Select, Month Navigator right above the table) */}
       <section className="expenses-history-section">
         <div className="expenses-history-header">
-          <h2>Expenses History{totalCount > 0 ? ` (${totalCount})` : ""}</h2>
-
           <div className="expenses-filter-bar">
+            {/* Search */}
             <div className="search-field expenses-search-field">
               <Search size={16} />
               <input
@@ -847,130 +501,223 @@ export function ExpensesDashboard() {
               )}
             </div>
 
+            {/* Select Category */}
             <div className="expenses-category-select-wrapper">
-              <select
-                className="expenses-select"
+              <Select
+                aria-label="Filter by category"
                 value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-              >
-                <option value="all">All Categories</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onValueChange={setCategoryFilter}
+                options={[
+                  { value: "all", label: "All Categories" },
+                  ...categories.map((c) => ({ value: c.id, label: c.name })),
+                ]}
+              />
             </div>
+          </div>
+
+          {/* Month Navigator */}
+          <div className="expenses-month-nav">
+            <button
+              type="button"
+              className="analytics-nav-btn"
+              onClick={() => handleNavigateMonth("prev")}
+              title="Previous Month"
+              aria-label="Previous Month"
+            >
+              <ChevronLeft size={18} />
+            </button>
+
+            <span className="expenses-month-label">
+              <CalendarDays size={16} />
+              <span>{monthBounds.label}</span>
+            </span>
+
+            <button
+              type="button"
+              className="analytics-nav-btn"
+              onClick={() => handleNavigateMonth("next")}
+              title="Next Month"
+              aria-label="Next Month"
+            >
+              <ChevronRight size={18} />
+            </button>
+
+            <button
+              type="button"
+              className="analytics-today-btn"
+              onClick={() => handleNavigateMonth("today")}
+              title="Current Month"
+            >
+              This Month
+            </button>
           </div>
         </div>
 
         {loading ? (
           <div className="expenses-table-loading">
             <LoaderCircle size={24} className="spin" />
-            <span>Loading expenses...</span>
+            <span>Loading expenses for {monthBounds.label}...</span>
           </div>
         ) : expenses.length === 0 ? (
           <div className="empty-state expenses-empty-state">
             <Receipt size={36} />
-            <h2>No expenses found</h2>
+            <h2>No expenses found for {monthBounds.label}</h2>
             <p>
               {searchQuery || categoryFilter !== "all"
-                ? "No transactions match your search filters."
-                : 'You have not recorded any expenses yet. Click "Add Expense" or use a Quick Add item above.'}
+                ? "No transactions in this month match your search filters."
+                : `No expenses recorded yet in ${monthBounds.label}. Click "Add Expense" or use a Quick Add item above.`}
             </p>
             <Button variant="primary" onClick={() => openAddExpenseModal()}>
               <Plus size={16} />
-              <span>Add Your First Expense</span>
+              <span>Record Expense for {monthBounds.label}</span>
             </Button>
           </div>
         ) : (
-          <div className="expenses-table-card">
-            <table className="expenses-table">
-              <thead>
-                <tr>
-                  <th>Category</th>
-                  <th>Title</th>
-                  <th>Date & Time</th>
-                  <th className="text-right">Amount (IRR)</th>
-                  <th className="text-right">Toman</th>
-                  <th className="text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {expenses.map((exp) => (
-                  <tr key={exp.id}>
-                    <td>
-                      <span className="expenses-cat-badge">
-                        <span
-                          className="cat-color-dot"
-                          style={{ backgroundColor: exp.categoryColor || "#64748b" }}
-                        />
-                        <span>{exp.categoryName || "Others"}</span>
-                      </span>
-                    </td>
-                    <td>
-                      <div className="expense-title-cell">
-                        <strong>{exp.title}</strong>
-                        {exp.note && <small className="expense-note-text">{exp.note}</small>}
-                      </div>
-                    </td>
-                    <td className="expense-date-cell">
-                      {new Date(exp.spentAt).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    <td className="text-right expense-amount-cell">
-                      <strong>{formatIRR(exp.amountMinor)}</strong>
-                    </td>
-                    <td className="text-right expense-toman-cell">
-                      {formatToman(exp.amountMinor)} T
-                    </td>
-                    <td className="text-right">
-                      <div className="expense-action-buttons">
-                        <button
-                          type="button"
-                          className="expense-action-btn"
-                          title="Edit expense"
-                          onClick={() => openEditExpenseModal(exp)}
-                        >
-                          <Edit3 size={15} />
-                        </button>
-                        <button
-                          type="button"
-                          className="expense-action-btn expense-action-btn--delete"
-                          title="Delete expense"
-                          onClick={() =>
-                            setDeleteTarget({
-                              type: "expense",
-                              id: exp.id,
-                              title: exp.title,
-                            })
-                          }
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
+          <>
+            {/* Desktop View: Table */}
+            <div className="expenses-table-card expenses-desktop-view">
+              <table className="expenses-table">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Title</th>
+                    <th>Date & Time</th>
+                    <th className="text-right">Amount (Toman)</th>
+                    <th className="text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {expenses.map((exp) => (
+                    <tr key={exp.id}>
+                      <td>
+                        <span className="expenses-cat-badge">
+                          <span
+                            className="cat-color-dot"
+                            style={{ backgroundColor: exp.categoryColor || "#64748b" }}
+                          />
+                          <span>{exp.categoryName || "Others"}</span>
+                        </span>
+                      </td>
+                      <td>
+                        <div className="expense-title-cell">
+                          <strong>{exp.title}</strong>
+                          {exp.note && <small className="expense-note-text">{exp.note}</small>}
+                        </div>
+                      </td>
+                      <td className="expense-date-cell">
+                        {formatExpenseDate(exp.spentAt, calendarSystem)}
+                      </td>
+                      <td className="text-right expense-amount-cell">
+                        <strong>{formatToman(exp.amountMinor)} Toman</strong>
+                      </td>
+                      <td className="text-right">
+                        <div className="expense-action-buttons">
+                          <button
+                            type="button"
+                            className="expense-action-btn"
+                            title="Edit expense"
+                            aria-label={`Edit ${exp.title}`}
+                            onClick={() => openEditExpenseModal(exp)}
+                          >
+                            <Edit3 size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            className="expense-action-btn expense-action-btn--delete"
+                            title="Delete expense"
+                            aria-label={`Delete ${exp.title}`}
+                            onClick={() =>
+                              setDeleteTarget({
+                                type: "expense",
+                                id: exp.id,
+                                title: exp.title,
+                              })
+                            }
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile View: Cards */}
+            <div className="expenses-cards-grid expenses-mobile-view" aria-label="Transactions">
+              {expenses.map((exp) => (
+                <article key={exp.id} className="expense-card">
+                  <div className="expense-card-header">
+                    <span className="expense-card-category">
+                      <span
+                        className="cat-color-dot"
+                        style={{ backgroundColor: exp.categoryColor || "#64748b" }}
+                      />
+                      <span>{exp.categoryName || "Others"}</span>
+                    </span>
+
+                    <div className="expense-card-actions">
+                      <button
+                        type="button"
+                        className="expense-action-btn"
+                        title="Edit expense"
+                        aria-label={`Edit ${exp.title}`}
+                        onClick={() => openEditExpenseModal(exp)}
+                      >
+                        <Edit3 size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        className="expense-action-btn expense-action-btn--delete"
+                        title="Delete expense"
+                        aria-label={`Delete ${exp.title}`}
+                        onClick={() =>
+                          setDeleteTarget({
+                            type: "expense",
+                            id: exp.id,
+                            title: exp.title,
+                          })
+                        }
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="expense-card-body">
+                    <h3 className="expense-card-title">{exp.title}</h3>
+                    {exp.note && <p className="expense-card-note">{exp.note}</p>}
+                  </div>
+
+                  <div className="expense-card-footer">
+                    <div className="expense-card-amount">
+                      <strong className="expense-card-amount-val">
+                        {formatToman(exp.amountMinor)}
+                      </strong>
+                      <span className="expense-card-currency">Toman</span>
+                    </div>
+
+                    <div className="expense-card-date">
+                      <CalendarDays size={13} aria-hidden="true" />
+                      <span>{formatExpenseDate(exp.spentAt, calendarSystem)}</span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </>
         )}
       </section>
 
-      {/* MODAL 1: Add/Edit Expense */}
+      {/* MODAL 1: Add/Edit Expense (Amount in Toman) */}
       <Dialog open={expenseModalOpen} onOpenChange={setExpenseModalOpen}>
         <DialogContent className="ui-dialog-content">
           <form onSubmit={handleSaveExpense}>
             <DialogHeader>
               <DialogTitle>{editingExpense ? "Edit Expense" : "Record Expense"}</DialogTitle>
               <DialogDescription>
-                Enter the details of your financial transaction in IRR.
+                Enter the details of your financial transaction in Toman.
               </DialogDescription>
             </DialogHeader>
 
@@ -988,40 +735,33 @@ export function ExpensesDashboard() {
               </div>
 
               <div className="field">
-                <label htmlFor="exp-amount">Amount (in IRR)</label>
+                <label htmlFor="exp-amount">Amount (in Toman)</label>
                 <div className="amount-input-group">
                   <input
                     id="exp-amount"
                     type="text"
                     inputMode="numeric"
-                    placeholder="e.g. 500000"
-                    value={expenseAmount}
-                    onChange={(e) => setExpenseAmount(e.target.value)}
+                    placeholder="e.g. 50000"
+                    value={expenseAmountToman}
+                    onChange={(e) => setExpenseAmountToman(e.target.value)}
                     required
                   />
-                  <span className="amount-currency-tag">IRR</span>
+                  <span className="amount-currency-tag">Toman</span>
                 </div>
-                {expenseAmount && /^\d+$/.test(expenseAmount) && (
-                  <small className="amount-toman-preview">
-                    = {formatToman(expenseAmount)} Iranian Toman
-                  </small>
-                )}
               </div>
 
               <div className="field">
-                <label htmlFor="exp-category">Category</label>
-                <select
-                  id="exp-category"
-                  className="expenses-select"
-                  value={expenseCategoryId}
-                  onChange={(e) => setExpenseCategoryId(e.target.value)}
-                >
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <label>Category</label>
+                <Select
+                  aria-label="Category"
+                  value={expenseCategoryId || (categories[0]?.id ?? "none")}
+                  onValueChange={setExpenseCategoryId}
+                  options={
+                    categories.length > 0
+                      ? categories.map((c) => ({ value: c.id, label: c.name }))
+                      : [{ value: "none", label: "No categories available", disabled: true }]
+                  }
+                />
               </div>
 
               <div className="field">
@@ -1074,7 +814,6 @@ export function ExpensesDashboard() {
             </DialogDescription>
           </DialogHeader>
 
-          {/* Form to add or edit */}
           <form onSubmit={handleSaveCategory} className="category-edit-form">
             <div className="field">
               <label htmlFor="cat-name">
@@ -1125,7 +864,6 @@ export function ExpensesDashboard() {
             </div>
           </form>
 
-          {/* Existing categories list */}
           <div className="category-manage-list">
             <h4>Existing Categories ({categories.length})</h4>
             <div className="category-items-scroll">
@@ -1184,18 +922,17 @@ export function ExpensesDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* MODAL 3: Manage Regular Items / Presets */}
+      {/* MODAL 3: Manage Regular Items / Presets (Amounts in Toman) */}
       <Dialog open={regularItemModalOpen} onOpenChange={setRegularItemModalOpen}>
         <DialogContent className="ui-dialog-content">
           <DialogHeader>
             <DialogTitle>Manage Quick-Add Presets</DialogTitle>
             <DialogDescription>
-              Configure regular items like Water or Gasoline with pre-set IRR amounts for 1-click
+              Configure regular items like Water or Gasoline with pre-set Toman amounts for 1-click
               recording.
             </DialogDescription>
           </DialogHeader>
 
-          {/* Form to add or edit preset */}
           <form onSubmit={handleSavePreset} className="category-edit-form">
             <div className="field">
               <label htmlFor="preset-title">
@@ -1213,38 +950,32 @@ export function ExpensesDashboard() {
 
             <div className="form-grid">
               <div className="field">
-                <label htmlFor="preset-amount">Amount (IRR)</label>
-                <input
-                  id="preset-amount"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="e.g. 600000"
-                  value={newPresetAmount}
-                  onChange={(e) => setNewPresetAmount(e.target.value)}
-                  required
-                />
-                {newPresetAmount && /^\d+$/.test(newPresetAmount) && (
-                  <small className="amount-toman-preview">
-                    = {formatToman(newPresetAmount)} Toman
-                  </small>
-                )}
+                <label htmlFor="preset-amount">Amount (in Toman)</label>
+                <div className="amount-input-group">
+                  <input
+                    id="preset-amount"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="e.g. 60000"
+                    value={newPresetAmountToman}
+                    onChange={(e) => setNewPresetAmountToman(e.target.value)}
+                    required
+                  />
+                  <span className="amount-currency-tag">Toman</span>
+                </div>
               </div>
 
               <div className="field">
-                <label htmlFor="preset-category">Category</label>
-                <select
-                  id="preset-category"
-                  className="expenses-select"
-                  value={newPresetCategoryId}
-                  onChange={(e) => setNewPresetCategoryId(e.target.value)}
-                >
-                  <option value="">No Category</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <label>Category</label>
+                <Select
+                  aria-label="Preset category"
+                  value={newPresetCategoryId || "none"}
+                  onValueChange={(val) => setNewPresetCategoryId(val === "none" ? "" : val)}
+                  options={[
+                    { value: "none", label: "No Category" },
+                    ...categories.map((c) => ({ value: c.id, label: c.name })),
+                  ]}
+                />
               </div>
             </div>
 
@@ -1259,7 +990,7 @@ export function ExpensesDashboard() {
                   onClick={() => {
                     setEditingPreset(null);
                     setNewPresetTitle("");
-                    setNewPresetAmount("");
+                    setNewPresetAmountToman("");
                   }}
                 >
                   Cancel
@@ -1268,7 +999,6 @@ export function ExpensesDashboard() {
             </div>
           </form>
 
-          {/* Existing Presets List */}
           <div className="category-manage-list">
             <h4>Existing Presets ({regularItems.length})</h4>
             <div className="category-items-scroll">
@@ -1280,8 +1010,7 @@ export function ExpensesDashboard() {
                       style={{ backgroundColor: item.categoryColor || "#64748b" }}
                     />
                     <strong>{item.title}</strong>
-                    <span className="preset-row-price">{formatIRR(item.amountMinor)} IRR</span>
-                    <span className="preset-row-toman">({formatToman(item.amountMinor)} T)</span>
+                    <span className="preset-row-price">{formatToman(item.amountMinor)} Toman</span>
                   </div>
                   <div className="category-manage-actions">
                     <button
@@ -1291,7 +1020,7 @@ export function ExpensesDashboard() {
                       onClick={() => {
                         setEditingPreset(item);
                         setNewPresetTitle(item.title);
-                        setNewPresetAmount(item.amountMinor);
+                        setNewPresetAmountToman((BigInt(item.amountMinor) / 10n).toString());
                         setNewPresetCategoryId(item.categoryId ?? "");
                       }}
                     >

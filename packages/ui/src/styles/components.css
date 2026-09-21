@@ -12,6 +12,7 @@
   font-weight: 700;
   line-height: 1.25;
   cursor: pointer;
+  text-decoration: none;
   transition:
     transform var(--motion-fast) var(--ease-standard),
     background-color var(--motion-fast) var(--ease-standard),

@@ -33,6 +33,8 @@ export function Select({
   disabled,
   "aria-label": ariaLabel,
 }: SelectProps) {
+  const selectedOption = options.find((opt) => opt.value === (value ?? defaultValue));
+
   return (
     <SelectPrimitive.Root
       value={value}
@@ -41,7 +43,9 @@ export function Select({
       disabled={disabled}
     >
       <SelectPrimitive.Trigger className={cn("ui-select", className)} aria-label={ariaLabel}>
-        <SelectPrimitive.Value placeholder={placeholder} />
+        <SelectPrimitive.Value placeholder={placeholder}>
+          {selectedOption ? selectedOption.label : undefined}
+        </SelectPrimitive.Value>
         <SelectPrimitive.Icon className="ui-select-icon">
           <ChevronDown aria-hidden="true" size={17} />
         </SelectPrimitive.Icon>

@@ -606,30 +606,31 @@ export class ExpensesRepository {
       }
 
       for (const row of currentRows) {
-        totalMinor += row.amount_minor;
+        const rowAmount = BigInt(row.amount_minor);
+        totalMinor += rowAmount;
 
         // Day bucket key YYYY-MM-DD
         const dateKey = row.spent_at.toISOString().slice(0, 10);
         const dayEntry = dayMap.get(dateKey);
         if (dayEntry) {
-          dayEntry.amount += row.amount_minor;
+          dayEntry.amount += rowAmount;
           dayEntry.count += 1;
         } else {
-          dayMap.set(dateKey, { amount: row.amount_minor, count: 1 });
+          dayMap.set(dateKey, { amount: rowAmount, count: 1 });
         }
 
         // Category breakdown
         const catKey = row.category_id ?? "uncategorized";
         const cat = categoryMap.get(catKey);
         if (cat) {
-          cat.amount += row.amount_minor;
+          cat.amount += rowAmount;
           cat.count += 1;
         } else {
           categoryMap.set(catKey, {
             name: row.category_name ?? "Others",
             color: row.category_color ?? "#64748b",
             icon: row.category_icon ?? "more-horizontal",
-            amount: row.amount_minor,
+            amount: rowAmount,
             count: 1,
           });
         }
