@@ -180,6 +180,7 @@ jobs:
           image-ref: reminder-app:ci
           scan-type: image
           scanners: vuln
+          vuln-type: os
           format: table
           exit-code: "1"
           severity: CRITICAL,HIGH

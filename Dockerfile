@@ -22,8 +22,6 @@ COPY packages/eslint-config/package.json packages/eslint-config/package.json
 COPY packages/typescript-config/package.json packages/typescript-config/package.json
 # The builder compiles every workspace package, so dev dependencies (including
 # TypeScript) must be installed even when the host sets NODE_ENV=production.
-# The builder compiles every workspace package, so dev dependencies (including
-# TypeScript) must be installed even when the host sets NODE_ENV=production.
 RUN pnpm install --frozen-lockfile --prod=false
 
 FROM deps AS builder
