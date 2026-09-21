@@ -249,14 +249,14 @@ This instance is running in **Demo Mode**. You have full access to explore the f
                 {
                   id: randomUUID(),
                   key: "STRIPE_PUBLISHABLE_KEY",
-                  ...encryptSecret("pk_live_51M0demo99xyz123", masterKey),
+                  ...encryptSecret("demo_pk_mock_stripe_key_99xyz", masterKey),
                   comment: null,
                   isSecret: false,
                 },
                 {
                   id: randomUUID(),
                   key: "STRIPE_SECRET_KEY",
-                  ...encryptSecret("sk_live_51M0secretkey99demo8877", masterKey),
+                  ...encryptSecret("demo_sk_mock_stripe_secret_key_8877", masterKey),
                   comment: "Payment gateway secret",
                   isSecret: true,
                 },
@@ -293,7 +293,7 @@ This instance is running in **Demo Mode**. You have full access to explore the f
                 {
                   id: randomUUID(),
                   key: "STRIPE_PUBLISHABLE_KEY",
-                  ...encryptSecret("pk_test_51M0staging123", masterKey),
+                  ...encryptSecret("demo_pk_mock_stripe_staging_123", masterKey),
                   comment: null,
                   isSecret: false,
                 },
