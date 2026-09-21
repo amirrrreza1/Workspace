@@ -44,8 +44,10 @@ ENV HOSTNAME=0.0.0.0
 WORKDIR /app
 
 RUN apt-get update \
+  && apt-get upgrade -y \
   && apt-get install -y --no-install-recommends postgresql-client tini \
   && rm -rf /var/lib/apt/lists/* \
+  && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /usr/local/bin/npm /usr/local/bin/npx /opt/yarn* /usr/local/bin/yarn* /usr/local/bin/corepack \
   && groupadd --system --gid 1001 reminder \
   && useradd --system --uid 1001 --gid reminder --home /app --shell /usr/sbin/nologin reminder
 
