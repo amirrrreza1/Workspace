@@ -64,7 +64,8 @@ export function LoginForm({
     }
   }
 
-  async function enterDemo() {
+  async function enterDemo(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (pending) return;
     setPending(true);
     setError(null);
@@ -90,6 +91,39 @@ export function LoginForm({
     }
   }
 
+  if (demoMode) {
+    return (
+      <main className="login-shell">
+        <form className="login-card" onSubmit={enterDemo}>
+          <span className="login-mark" aria-hidden="true">
+            <WorkspaceIcon size={48} />
+          </span>
+          <div className="login-heading">
+            <h1>Workspace</h1>
+            <p>Explore this project with interactive demo access.</p>
+          </div>
+
+          <Button
+            type="submit"
+            variant="primary"
+            className="login-submit"
+            disabled={pending}
+            autoFocus
+          >
+            {pending ? (
+              <>
+                <LoaderCircle aria-hidden="true" className="spin" size={18} />
+                Entering...
+              </>
+            ) : (
+              "Enter"
+            )}
+          </Button>
+        </form>
+      </main>
+    );
+  }
+
   return (
     <main className="login-shell">
       <form className="login-card" onSubmit={submit}>
@@ -101,34 +135,6 @@ export function LoginForm({
           <p>Enter the password to open your dashboard.</p>
         </div>
 
-        {demoMode && (
-          <div className="demo-login-card">
-            <div className="demo-login-header">
-              <span className="demo-pill">⚡ Demo Mode Active</span>
-              <p>Explore this project with full interactive demo access.</p>
-            </div>
-            <Button
-              type="button"
-              variant="secondary"
-              className="demo-login-button"
-              onClick={enterDemo}
-              disabled={pending}
-            >
-              {pending ? (
-                <>
-                  <LoaderCircle aria-hidden="true" className="spin" size={18} />
-                  Entering demo...
-                </>
-              ) : (
-                "Explore Live Demo (1-Click)"
-              )}
-            </Button>
-            <div className="demo-divider">
-              <span>or enter password</span>
-            </div>
-          </div>
-        )}
-
         <div className="field field--wide login-field">
           <label htmlFor="login-password">Password</label>
           <span className="login-input">
@@ -139,11 +145,10 @@ export function LoginForm({
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
-              autoFocus={!demoMode}
+              autoFocus
               required
               disabled={pending}
               aria-invalid={error ? true : undefined}
-              placeholder={demoMode ? "Default: workspace_demo_pass" : undefined}
             />
             <button
               type="button"

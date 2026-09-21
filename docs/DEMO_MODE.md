@@ -8,7 +8,7 @@ Demo Mode is specially engineered for public demonstrations, client walkthroughs
 
 ## 🌟 Demo Mode Highlights
 
-- **1-Click Demo Login:** Visitors don’t need to remember or type credentials. A prominent **"Explore Live Demo (1-Click)"** button lets anyone sign in immediately.
+- **1-Click Demo Login:** Visitors don’t need to remember or type credentials. A clean **"Enter"** button lets anyone sign in immediately with one click.
 - **Pre-Seeded Sample Data:** First launch automatically seeds realistic reminders, expenses, pinned notes, and encrypted project environment secrets.
 - **Interactive Sandbox:** Visitors can create, edit, pause, or delete items to test the full product surface.
 - **Top Banner with Instant Reset:** A persistent banner lets visitors or admins click **"Reset Demo Data"** at any time to return the workspace to its clean initial state.
@@ -82,7 +82,7 @@ You should receive `{"ok":true,"database":"connected","migrations":"current"}`.
 Visit your VPS IP or domain in your browser:
 
 - Open `http://<YOUR_VPS_IP>:1234`
-- Click **"Explore Live Demo (1-Click)"** on the login screen.
+- Click **"Enter"** on the login screen.
 - You are now inside the interactive Workspace demo!
 
 ---
