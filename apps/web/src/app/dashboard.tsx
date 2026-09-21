@@ -369,7 +369,7 @@ export function Dashboard() {
   const [reminderModal, setReminderModal] = useState<Reminder | "new" | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const firstLoad = useRef(true);
+  const isInitialMount = useRef(true);
 
   const activeFiltersCount =
     (type ? 1 : 0) + (state !== "active" ? 1 : 0) + (sort !== "nextOccurrence" ? 1 : 0);
@@ -409,18 +409,20 @@ export function Dashboard() {
     setState(params.get("state") ?? "active");
     setSort(params.get("sort") ?? "nextOccurrence");
     setSettingsOpen(params.get("modal") === "settings");
-    firstLoad.current = false;
   }, []);
   useEffect(() => {
-    if (!firstLoad.current) {
-      updateUrl({
-        q: search || null,
-        type: type || null,
-        state: state === "active" ? null : state,
-        sort: sort === "nextOccurrence" ? null : sort,
-      });
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
       load();
+      return;
     }
+    updateUrl({
+      q: search || null,
+      type: type || null,
+      state: state === "active" ? null : state,
+      sort: sort === "nextOccurrence" ? null : sort,
+    });
+    load();
   }, [load, search, state, sort, type]);
   useEffect(() => {
     const online = () => {

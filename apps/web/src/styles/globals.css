@@ -1523,7 +1523,7 @@ body {
     padding-inline: var(--space-3);
     font-size: 0.875rem;
     gap: var(--space-2);
-    min-height: 2.625rem;
+    min-height: 2.75rem;
     white-space: nowrap;
   }
 }

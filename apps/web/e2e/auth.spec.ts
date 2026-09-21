@@ -21,7 +21,7 @@ test("rejects the wrong password without signing in", async ({ page }) => {
   await page.getByLabel(passwordField).fill("definitely-not-the-password");
   await page.getByRole("button", { name: signInButton }).click();
 
-  await expect(page.getByRole("alert")).toHaveText("That password is incorrect.");
+  await expect(page.locator(".ui-toast[role='alert']")).toHaveText("That password is incorrect.");
   await expect(page).toHaveURL(/\/login$/);
   // The field is cleared so a mistyped password is not resubmitted by accident.
   await expect(page.getByLabel(passwordField)).toHaveValue("");

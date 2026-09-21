@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { SESSION_COOKIE_NAME, authPassword, isPublicPath, verifySessionToken } from "@/lib/auth";
+import {
+  SESSION_COOKIE_NAME,
+  authPassword,
+  isPublicPath,
+  safeRedirectPath,
+  verifySessionToken,
+} from "@/lib/auth";
 
 /**
  * Fail-closed gate for the whole app. Doing this in middleware rather than in each
@@ -62,10 +68,8 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   // Someone already signed in has no reason to see the form again.
   if (pathname === "/login") {
     if (!authenticated) return NextResponse.next();
-    const target = request.nextUrl.clone();
-    target.pathname = "/";
-    target.search = "";
-    return NextResponse.redirect(target);
+    const destination = safeRedirectPath(request.nextUrl.searchParams.get("next"));
+    return NextResponse.redirect(new URL(destination, request.url));
   }
 
   if (isPublicPath(pathname) || authenticated) return NextResponse.next();
