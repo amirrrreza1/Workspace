@@ -43,6 +43,7 @@ import {
   Switch,
 } from "@reminder/ui";
 import type { Note, NotesSummary } from "@reminder/domain";
+import { EmptyState } from "../empty-state";
 import { MarkdownRenderer } from "./markdown-renderer";
 
 type FilterState = {
@@ -555,18 +556,27 @@ export function NotesDashboard() {
         </section>
 
         {loading ? (
-          <div className="empty-state">
-            <LoaderCircle className="spin" aria-hidden="true" size={28} />
-            <p>Loading notes…</p>
+          <div className="content-loading" role="status">
+            <LoaderCircle className="spin" aria-hidden="true" size={24} />
+            <span>Loading notes…</span>
           </div>
         ) : notes.length === 0 ? (
-          <div className="empty-state">
-            <FileText aria-hidden="true" size={40} />
-            <p>No notes found.</p>
-            <Button variant="secondary" onClick={openCreateModal}>
-              <Plus aria-hidden="true" size={16} /> Create your first note
-            </Button>
-          </div>
+          <EmptyState
+            icon={<FileText aria-hidden="true" />}
+            title="No notes found"
+            description={
+              filter.q.trim() || filter.tag || filter.status !== "active"
+                ? "Try changing your search or filters."
+                : "Write a note to keep a thought, list, or draft in one place."
+            }
+            actions={
+              !filter.q.trim() && !filter.tag && filter.status === "active" ? (
+                <Button variant="primary" onClick={openCreateModal}>
+                  <Plus aria-hidden="true" size={16} /> Create your first note
+                </Button>
+              ) : null
+            }
+          />
         ) : (
           <div className="card-grid">
             {notes.map((note) => (

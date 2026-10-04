@@ -39,6 +39,7 @@ import {
   type ProjectEnvironment,
   type ProjectSecret,
 } from "@reminder/domain";
+import { EmptyState } from "../empty-state";
 
 export function SecretsDashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -565,23 +566,22 @@ export function SecretsDashboard() {
             </div>
 
             {environments.length === 0 ? (
-              <div className="empty-state">
-                <KeyRound aria-hidden="true" size={40} />
-                <h2>No Environments Yet</h2>
-                <p>
-                  Create an environment (such as development, staging, or production) to start
-                  managing secrets.
-                </p>
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    setNewEnvModalError(null);
-                    setNewEnvOpen(true);
-                  }}
-                >
-                  <Plus size={16} /> Add environment
-                </Button>
-              </div>
+              <EmptyState
+                icon={<KeyRound aria-hidden="true" />}
+                title="No environments yet"
+                description="Create an environment (such as development, staging, or production) to start managing secrets."
+                actions={
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      setNewEnvModalError(null);
+                      setNewEnvOpen(true);
+                    }}
+                  >
+                    <Plus size={16} /> Add environment
+                  </Button>
+                }
+              />
             ) : (
               <>
                 {activeEnvironment && (
@@ -663,21 +663,26 @@ export function SecretsDashboard() {
 
                 {/* Secrets Table */}
                 {secrets.length === 0 ? (
-                  <div className="empty-state">
-                    <KeyRound aria-hidden="true" size={40} />
-                    <p>
-                      No environment variables defined in{" "}
-                      {activeEnvironment?.name ?? "this environment"}.
-                    </p>
-                    <div className="empty-actions">
-                      <Button variant="primary" onClick={openCreateSecret}>
-                        <Plus size={16} /> Add variable
-                      </Button>
-                      <Button variant="secondary" onClick={() => setImportModalOpen(true)}>
-                        <Upload size={16} /> Import from .env
-                      </Button>
-                    </div>
-                  </div>
+                  <EmptyState
+                    icon={<KeyRound aria-hidden="true" />}
+                    title="No variables yet"
+                    description={
+                      <>
+                        No environment variables defined in{" "}
+                        {activeEnvironment?.name ?? "this environment"}.
+                      </>
+                    }
+                    actions={
+                      <>
+                        <Button variant="primary" onClick={openCreateSecret}>
+                          <Plus size={16} /> Add variable
+                        </Button>
+                        <Button variant="secondary" onClick={() => setImportModalOpen(true)}>
+                          <Upload size={16} /> Import from .env
+                        </Button>
+                      </>
+                    }
+                  />
                 ) : (
                   <div className="secrets-table-container">
                     <table className="secrets-table">
@@ -779,16 +784,16 @@ export function SecretsDashboard() {
         )}
 
         {projects.length === 0 && !loading && (
-          <div className="empty-state">
-            <FileCode aria-hidden="true" size={44} />
-            <h2>No Projects Yet</h2>
-            <p>
-              Create a project to start managing its environment variables and secrets securely.
-            </p>
-            <Button variant="primary" onClick={() => setNewProjectOpen(true)}>
-              <FolderPlus size={16} /> Create your first project
-            </Button>
-          </div>
+          <EmptyState
+            icon={<FileCode aria-hidden="true" />}
+            title="No projects yet"
+            description="Create a project to start managing its environment variables and secrets securely."
+            actions={
+              <Button variant="primary" onClick={() => setNewProjectOpen(true)}>
+                <FolderPlus size={16} /> Create your first project
+              </Button>
+            }
+          />
         )}
       </main>
 

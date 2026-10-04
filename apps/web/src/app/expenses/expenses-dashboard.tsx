@@ -43,6 +43,7 @@ import {
   getMonthBounds,
   navigateMonth,
 } from "@/lib/expenses-month";
+import { EmptyState } from "../empty-state";
 
 export { formatExpenseDate, formatToman };
 
@@ -564,19 +565,23 @@ export function ExpensesDashboard() {
             <span>Loading expenses for {monthBounds.label}...</span>
           </div>
         ) : expenses.length === 0 ? (
-          <div className="empty-state expenses-empty-state">
-            <Receipt size={36} />
-            <h2>No expenses found for {monthBounds.label}</h2>
-            <p>
-              {searchQuery || categoryFilter !== "all"
+          <EmptyState
+            icon={<Receipt aria-hidden="true" />}
+            title={`No expenses found for ${monthBounds.label}`}
+            description={
+              searchQuery || categoryFilter !== "all"
                 ? "No transactions in this month match your search filters."
-                : `No expenses recorded yet in ${monthBounds.label}. Click "Add Expense" or use a Quick Add item above.`}
-            </p>
-            <Button variant="primary" onClick={() => openAddExpenseModal()}>
-              <Plus size={16} />
-              <span>Record Expense for {monthBounds.label}</span>
-            </Button>
-          </div>
+                : `No expenses recorded yet in ${monthBounds.label}. Add an expense or use a quick-add item above.`
+            }
+            actions={
+              !searchQuery && categoryFilter === "all" ? (
+                <Button variant="primary" onClick={() => openAddExpenseModal()}>
+                  <Plus size={16} />
+                  <span>Record expense for {monthBounds.label}</span>
+                </Button>
+              ) : null
+            }
+          />
         ) : (
           <>
             {/* Desktop View: Table */}

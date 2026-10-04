@@ -425,21 +425,44 @@ body {
 
 .empty-state {
   display: grid;
-  justify-items: start;
+  justify-items: center;
+  align-content: center;
   gap: var(--space-3);
-  max-inline-size: 32rem;
-  padding: var(--space-8);
+  inline-size: 100%;
+  padding: var(--space-10) var(--space-6);
+  text-align: center;
 }
 
-.empty-state > svg {
+.empty-state-mark {
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  margin-block-end: var(--space-1);
+  border: var(--border-strong);
+  border-radius: var(--radius-card);
+  background: var(--color-canvas);
   color: var(--color-accent);
+  box-shadow: var(--shadow-control);
 }
+
+.empty-state-mark svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
 .empty-state h2 {
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  max-inline-size: 28rem;
 }
+
 .empty-state p {
   color: var(--color-ink-muted);
+  max-inline-size: 36rem;
+  line-height: 1.5;
 }
 
 .status-banner,
@@ -2096,9 +2119,11 @@ body {
 
 .empty-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: var(--space-3);
-  margin-top: var(--space-3);
+  margin-block-start: var(--space-2);
 }
 
 .text-muted {
@@ -3586,7 +3611,8 @@ a.ui-button {
   background: rgba(220, 38, 38, 0.1);
 }
 
-.expenses-table-loading {
+.expenses-table-loading,
+.content-loading {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3594,10 +3620,6 @@ a.ui-button {
   min-height: 10rem;
   color: var(--color-ink-muted);
   font-weight: 600;
-}
-
-.expenses-empty-state {
-  margin-inline: auto;
 }
 
 /* Responsive visibility for expenses transactions */

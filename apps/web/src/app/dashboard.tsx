@@ -35,6 +35,7 @@ import { createReminderSchema, reminderPresets } from "@reminder/domain";
 import { useTheme, type Theme } from "@/lib/theme-provider";
 
 import { parseAmount } from "@/lib/amount";
+import { EmptyState } from "./empty-state";
 
 type CalendarSystem = "gregorian" | "jalali";
 type Currency = "IRR" | "USD";
@@ -678,21 +679,23 @@ export function Dashboard() {
             ))}
           </div>
         ) : (
-          <section className="empty-state">
-            <Bell aria-hidden="true" size={32} />
-            <h2>No reminders found</h2>
-            <p>
-              {search || type || state !== "active"
+          <EmptyState
+            icon={<Bell aria-hidden="true" />}
+            title="No reminders found"
+            description={
+              search || type || state !== "active"
                 ? "Try changing your search or filters."
-                : "Add a recurring moment to see what’s coming and get ready in time."}
-            </p>
-            {!search && !type && state === "active" && (
-              <Button variant="primary" onClick={() => openReminder("new")}>
-                <Plus aria-hidden="true" size={18} />
-                Add reminder
-              </Button>
-            )}
-          </section>
+                : "Add a recurring moment to see what’s coming and get ready in time."
+            }
+            actions={
+              !search && !type && state === "active" ? (
+                <Button variant="primary" onClick={() => openReminder("new")}>
+                  <Plus aria-hidden="true" size={18} />
+                  Add reminder
+                </Button>
+              ) : null
+            }
+          />
         )}
       </main>
       <ReminderModal
