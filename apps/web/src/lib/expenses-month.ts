@@ -1,6 +1,9 @@
 import {
   daysInMonth,
+  formatGregorianDate,
   fromGregorian,
+  isSupportedGregorianDate,
+  isValidCalendarDate,
   toGregorian,
   type CalendarDate,
   type CalendarSystem,
@@ -171,26 +174,157 @@ export function formatToman(minor: string | number | bigint): string {
   return toman.toLocaleString("en-US");
 }
 
-// Format expense transaction date according to calendar system
-export function formatExpenseDate(iso: string, calendar: CalendarSystem): string {
+const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+const JALALI_WEEKDAYS = ["Sa", "Su", "Mo", "Tu", "We", "Th", "Fr"] as const;
+const GREGORIAN_WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"] as const;
+const JALALI_WEEKDAY_NAMES = [
+  "Saturday",
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+] as const;
+const GREGORIAN_WEEKDAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+] as const;
+
+export type DatePickerCell = { day: number; dateOnly: string } | null;
+
+export function parseDateOnly(value: string): GregorianDate | null {
+  const match = DATE_ONLY.exec(value);
+  if (!match) return null;
+  const date: GregorianDate = {
+    calendar: "gregorian",
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3]),
+  };
+  if (!isValidCalendarDate(date) || !isSupportedGregorianDate(date)) return null;
+  return date;
+}
+
+export function localDateOnly(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function isoToLocalDateOnly(iso: string): string | null {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return localDateOnly(date);
+}
+
+/** Stores a calendar day at local noon so the chosen day stays stable across time zones. */
+export function dateOnlyToSpentAt(value: string): string {
+  const parsed = parseDateOnly(value);
+  if (!parsed) return new Date().toISOString();
+  return new Date(parsed.year, parsed.month - 1, parsed.day, 12, 0, 0, 0).toISOString();
+}
+
+export function calendarDateFromDateOnly(
+  value: string,
+  calendar: CalendarSystem,
+): CalendarDate | null {
+  const parsed = parseDateOnly(value);
+  if (!parsed) return null;
   try {
-    const date = new Date(iso);
-    return new Intl.DateTimeFormat(calendar === "jalali" ? "en-US-u-ca-persian" : "en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-      .format(date)
-      .replace(" AP", "");
+    return fromGregorian(parsed, calendar);
   } catch {
-    return new Date(iso).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return null;
+  }
+}
+
+export function dateOnlyFromCalendarDate(date: CalendarDate): string {
+  return formatGregorianDate(toGregorian(date));
+}
+
+export function weekdayLabels(calendar: CalendarSystem): readonly string[] {
+  return calendar === "jalali" ? JALALI_WEEKDAYS : GREGORIAN_WEEKDAYS;
+}
+
+export function weekdayColumn(date: CalendarDate): number {
+  const gregorian = toGregorian(date);
+  const jsDay = new Date(Date.UTC(gregorian.year, gregorian.month - 1, gregorian.day)).getUTCDay();
+  return date.calendar === "jalali" ? (jsDay + 1) % 7 : jsDay;
+}
+
+export function shiftCalendarMonth(date: CalendarDate, delta: number): CalendarDate | null {
+  if (!Number.isInteger(delta)) return null;
+  const index = date.year * 12 + (date.month - 1) + delta;
+  const year = Math.floor(index / 12);
+  const month = index - year * 12 + 1;
+  const length = daysInMonth(date.calendar, year, month);
+  if (length < 1) return null;
+  const next: CalendarDate = {
+    calendar: date.calendar,
+    year,
+    month,
+    day: Math.min(Math.max(date.day, 1), length),
+  };
+  try {
+    if (!isSupportedGregorianDate(toGregorian(next))) return null;
+    return next;
+  } catch {
+    return null;
+  }
+}
+
+export function buildMonthGrid(
+  calendar: CalendarSystem,
+  year: number,
+  month: number,
+): DatePickerCell[] {
+  const length = daysInMonth(calendar, year, month);
+  if (length < 1) return [];
+  let lead = 0;
+  try {
+    lead = weekdayColumn({ calendar, year, month, day: 1 });
+  } catch {
+    return [];
+  }
+  const cells: DatePickerCell[] = Array.from({ length: lead }, () => null);
+  for (let day = 1; day <= length; day += 1) {
+    cells.push({
+      day,
+      dateOnly: dateOnlyFromCalendarDate({ calendar, year, month, day }),
     });
   }
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
+
+export function formatCalendarDay(value: string, calendar: CalendarSystem): string {
+  const date = calendarDateFromDateOnly(value, calendar);
+  if (!date) return value;
+  if (calendar === "jalali") {
+    const monthName = JALALI_MONTH_NAMES[date.month - 1];
+    return monthName ? `${date.day} ${monthName} ${date.year}` : value;
+  }
+  const monthName = GREGORIAN_MONTH_NAMES[date.month - 1];
+  return monthName ? `${monthName.slice(0, 3)} ${date.day}, ${date.year}` : value;
+}
+
+export function formatCalendarDayLong(value: string, calendar: CalendarSystem): string {
+  const date = calendarDateFromDateOnly(value, calendar);
+  if (!date) return "Select a date";
+  const names = calendar === "jalali" ? JALALI_WEEKDAY_NAMES : GREGORIAN_WEEKDAY_NAMES;
+  const weekday = names[weekdayColumn(date)];
+  return `${weekday}, ${formatCalendarDay(value, calendar)}`;
+}
+
+export function formatExpenseDate(iso: string, calendar: CalendarSystem): string {
+  const dateOnly = isoToLocalDateOnly(iso);
+  if (!dateOnly) return "—";
+  return formatCalendarDay(dateOnly, calendar);
 }

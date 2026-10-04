@@ -36,6 +36,8 @@ import type {
   ExpensePeriodType,
   ExpenseReportSummary,
 } from "@reminder/domain";
+import { dateOnlyToSpentAt, localDateOnly } from "@/lib/expenses-month";
+import { ExpenseDatePicker } from "../date-picker";
 
 // Quick color palette options for categories
 const COLOR_PALETTE = [
@@ -165,7 +167,7 @@ export function ReportsDashboard() {
         amountMinor,
         currency: "IRR" as const,
         categoryId: expenseCategoryId && expenseCategoryId !== "none" ? expenseCategoryId : null,
-        spentAt: expenseSpentAt ? new Date(expenseSpentAt).toISOString() : new Date().toISOString(),
+        spentAt: dateOnlyToSpentAt(expenseSpentAt || localDateOnly(new Date())),
         note: expenseNote.trim() || null,
       };
 
@@ -191,10 +193,7 @@ export function ReportsDashboard() {
     setExpenseTitle("");
     setExpenseAmountToman("");
     setExpenseCategoryId(categories[0]?.id ?? "");
-    const now = new Date();
-    const offset = now.getTimezoneOffset() * 60000;
-    const localISOTime = new Date(now.getTime() - offset).toISOString().slice(0, 16);
-    setExpenseSpentAt(localISOTime);
+    setExpenseSpentAt(localDateOnly(new Date()));
     setExpenseNote("");
     setExpenseModalOpen(true);
   };
@@ -628,13 +627,12 @@ export function ReportsDashboard() {
               </div>
 
               <div className="field">
-                <label htmlFor="exp-date">Date & Time</label>
-                <input
+                <label htmlFor="exp-date">Date</label>
+                <ExpenseDatePicker
                   id="exp-date"
-                  type="datetime-local"
                   value={expenseSpentAt}
-                  onChange={(e) => setExpenseSpentAt(e.target.value)}
-                  required
+                  onChange={setExpenseSpentAt}
+                  calendar={calendarSystem}
                 />
               </div>
 

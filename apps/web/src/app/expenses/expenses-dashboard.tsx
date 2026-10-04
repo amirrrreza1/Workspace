@@ -38,12 +38,16 @@ import type {
   RegularExpenseItem,
 } from "@reminder/domain";
 import {
+  dateOnlyToSpentAt,
   formatExpenseDate,
   formatToman,
   getMonthBounds,
+  isoToLocalDateOnly,
+  localDateOnly,
   navigateMonth,
 } from "@/lib/expenses-month";
 import { EmptyState } from "../empty-state";
+import { ExpenseDatePicker } from "./date-picker";
 
 export { formatExpenseDate, formatToman };
 
@@ -186,7 +190,7 @@ export function ExpensesDashboard() {
           amountMinor: item.amountMinor,
           currency: "IRR",
           categoryId: item.categoryId ?? undefined,
-          spentAt: new Date().toISOString(),
+          spentAt: dateOnlyToSpentAt(localDateOnly(new Date())),
         }),
       });
 
@@ -220,7 +224,7 @@ export function ExpensesDashboard() {
         amountMinor,
         currency: "IRR" as const,
         categoryId: expenseCategoryId && expenseCategoryId !== "none" ? expenseCategoryId : null,
-        spentAt: expenseSpentAt ? new Date(expenseSpentAt).toISOString() : new Date().toISOString(),
+        spentAt: dateOnlyToSpentAt(expenseSpentAt || localDateOnly(new Date())),
         note: expenseNote.trim() || null,
       };
 
@@ -258,10 +262,7 @@ export function ExpensesDashboard() {
     setExpenseAmountToman(preset?.amountMinor ? (BigInt(preset.amountMinor) / 10n).toString() : "");
     setExpenseCategoryId(preset?.categoryId ?? categories[0]?.id ?? "");
 
-    const now = new Date();
-    const offset = now.getTimezoneOffset() * 60000;
-    const localISOTime = new Date(now.getTime() - offset).toISOString().slice(0, 16);
-    setExpenseSpentAt(localISOTime);
+    setExpenseSpentAt(localDateOnly(new Date()));
     setExpenseNote("");
     setExpenseModalOpen(true);
   };
@@ -271,10 +272,7 @@ export function ExpensesDashboard() {
     setExpenseTitle(exp.title);
     setExpenseAmountToman((BigInt(exp.amountMinor) / 10n).toString());
     setExpenseCategoryId(exp.categoryId ?? "");
-    const d = new Date(exp.spentAt);
-    const offset = d.getTimezoneOffset() * 60000;
-    const localISOTime = new Date(d.getTime() - offset).toISOString().slice(0, 16);
-    setExpenseSpentAt(localISOTime);
+    setExpenseSpentAt(isoToLocalDateOnly(exp.spentAt) ?? localDateOnly(new Date()));
     setExpenseNote(exp.note ?? "");
     setExpenseModalOpen(true);
   };
@@ -591,7 +589,7 @@ export function ExpensesDashboard() {
                   <tr>
                     <th>Category</th>
                     <th>Title</th>
-                    <th>Date & Time</th>
+                    <th>Date</th>
                     <th className="text-right">Amount (Toman)</th>
                     <th className="text-right">Actions</th>
                   </tr>
@@ -775,13 +773,12 @@ export function ExpensesDashboard() {
               </div>
 
               <div className="field">
-                <label htmlFor="exp-date">Date & Time</label>
-                <input
+                <label htmlFor="exp-date">Date</label>
+                <ExpenseDatePicker
                   id="exp-date"
-                  type="datetime-local"
                   value={expenseSpentAt}
-                  onChange={(e) => setExpenseSpentAt(e.target.value)}
-                  required
+                  onChange={setExpenseSpentAt}
+                  calendar={calendarSystem}
                 />
               </div>
 
