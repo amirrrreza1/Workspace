@@ -41,6 +41,7 @@ import {
   dateOnlyToSpentAt,
   formatExpenseDate,
   formatToman,
+  formatTomanInput,
   getMonthBounds,
   isoToLocalDateOnly,
   localDateOnly,
@@ -48,6 +49,7 @@ import {
 } from "@/lib/expenses-month";
 import { EmptyState } from "../empty-state";
 import { ExpenseDatePicker } from "./date-picker";
+import { TomanAmountInput } from "./toman-amount-input";
 
 export { formatExpenseDate, formatToman };
 
@@ -259,7 +261,9 @@ export function ExpensesDashboard() {
   const openAddExpenseModal = (preset?: Partial<RegularExpenseItem>) => {
     setEditingExpense(null);
     setExpenseTitle(preset?.title ?? "");
-    setExpenseAmountToman(preset?.amountMinor ? (BigInt(preset.amountMinor) / 10n).toString() : "");
+    setExpenseAmountToman(
+      preset?.amountMinor ? formatTomanInput((BigInt(preset.amountMinor) / 10n).toString()) : "",
+    );
     setExpenseCategoryId(preset?.categoryId ?? categories[0]?.id ?? "");
 
     setExpenseSpentAt(localDateOnly(new Date()));
@@ -270,7 +274,7 @@ export function ExpensesDashboard() {
   const openEditExpenseModal = (exp: Expense) => {
     setEditingExpense(exp);
     setExpenseTitle(exp.title);
-    setExpenseAmountToman((BigInt(exp.amountMinor) / 10n).toString());
+    setExpenseAmountToman(formatTomanInput((BigInt(exp.amountMinor) / 10n).toString()));
     setExpenseCategoryId(exp.categoryId ?? "");
     setExpenseSpentAt(isoToLocalDateOnly(exp.spentAt) ?? localDateOnly(new Date()));
     setExpenseNote(exp.note ?? "");
@@ -745,14 +749,10 @@ export function ExpensesDashboard() {
               <div className="field">
                 <label htmlFor="exp-amount">Amount (in Toman)</label>
                 <div className="amount-input-group">
-                  <input
+                  <TomanAmountInput
                     id="exp-amount"
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="e.g. 50000"
                     value={expenseAmountToman}
-                    onChange={(e) => setExpenseAmountToman(e.target.value)}
-                    required
+                    onChange={setExpenseAmountToman}
                   />
                   <span className="amount-currency-tag">Toman</span>
                 </div>

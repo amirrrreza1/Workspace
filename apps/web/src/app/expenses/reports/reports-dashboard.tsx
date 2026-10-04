@@ -38,6 +38,7 @@ import type {
 } from "@reminder/domain";
 import { dateOnlyToSpentAt, localDateOnly } from "@/lib/expenses-month";
 import { ExpenseDatePicker } from "../date-picker";
+import { TomanAmountInput } from "../toman-amount-input";
 
 // Quick color palette options for categories
 const COLOR_PALETTE = [
@@ -599,14 +600,10 @@ export function ReportsDashboard() {
               <div className="field">
                 <label htmlFor="exp-amount">Amount (in Toman)</label>
                 <div className="amount-input-group">
-                  <input
+                  <TomanAmountInput
                     id="exp-amount"
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="e.g. 50000"
                     value={expenseAmountToman}
-                    onChange={(e) => setExpenseAmountToman(e.target.value)}
-                    required
+                    onChange={setExpenseAmountToman}
                   />
                   <span className="amount-currency-tag">Toman</span>
                 </div>

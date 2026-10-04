@@ -174,6 +174,27 @@ export function formatToman(minor: string | number | bigint): string {
   return toman.toLocaleString("en-US");
 }
 
+/** Group a Toman amount with thousands separators while it is typed. */
+export function formatTomanInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+  if (!digits) return "";
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+/** Caret index in a grouped amount after `digitCount` digits. */
+export function tomanInputCaret(formatted: string, digitCount: number): number {
+  if (digitCount <= 0) return 0;
+  let seen = 0;
+  for (let i = 0; i < formatted.length; i++) {
+    const char = formatted[i];
+    if (char >= "0" && char <= "9") {
+      seen++;
+      if (seen === digitCount) return i + 1;
+    }
+  }
+  return formatted.length;
+}
+
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 const JALALI_WEEKDAYS = ["Sa", "Su", "Mo", "Tu", "We", "Th", "Fr"] as const;

@@ -5,10 +5,12 @@ import {
   formatCalendarDay,
   formatExpenseDate,
   formatToman,
+  formatTomanInput,
   getMonthBounds,
   isoToLocalDateOnly,
   navigateMonth,
   shiftCalendarMonth,
+  tomanInputCaret,
   weekdayColumn,
 } from "./expenses-month";
 
@@ -69,6 +71,17 @@ describe("expenses-month", () => {
     expect(formatToman("500000")).toBe("50,000");
     expect(formatToman(1000000)).toBe("100,000");
     expect(formatToman(0n)).toBe("0");
+  });
+
+  it("groups Toman digits in the amount field", () => {
+    expect(formatTomanInput("50000")).toBe("50,000");
+    expect(formatTomanInput("50,000")).toBe("50,000");
+    expect(formatTomanInput("1 250 000")).toBe("1,250,000");
+    expect(formatTomanInput("")).toBe("");
+    expect(formatTomanInput("0")).toBe("0");
+    expect(formatTomanInput("050")).toBe("50");
+    expect(tomanInputCaret("50,000", 3)).toBe(4);
+    expect(tomanInputCaret("1,250,000", 4)).toBe(5);
   });
 
   it("formats expense dates as a day without a time", () => {
