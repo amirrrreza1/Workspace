@@ -187,7 +187,7 @@ export function tomanInputCaret(formatted: string, digitCount: number): number {
   let seen = 0;
   for (let i = 0; i < formatted.length; i++) {
     const char = formatted[i];
-    if (char >= "0" && char <= "9") {
+    if (char !== undefined && char >= "0" && char <= "9") {
       seen++;
       if (seen === digitCount) return i + 1;
     }
